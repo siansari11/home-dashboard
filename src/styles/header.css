@@ -8,8 +8,9 @@
      ========================= */
 
   /* Title */
-  --hdr-title-size: 70px;
+  --hdr-title-size: 25px;
   --hdr-title-weight: 700;
+  --hdr-title-line-height: 2.35
   --hdr-title-letter-spacing: 0.05em;
   --hdr-title-word-spacing: 0.15em;
   --hdr-title-margin-bottom: 17px;
@@ -19,7 +20,7 @@
   --hdr-quote-author-size: 8px;
   --hdr-quote-line-height: 1.0;
   --hdr-quote-max-width: 720px;
-  --hdr-quote-margin-bottom: 14px;
+  --hdr-quote-margin-bottom: 10px;
 
   /* Quote animation feel */
   --hdr-quote-word-anim-duration: 2.4s;
@@ -80,7 +81,7 @@
   font-family: "Great Vibes", cursive;
   font-size: var(--hdr-title-size);
   font-weight: var(--hdr-title-weight);
-  line-height: 2.05;
+  line-height: var(--hdr-title-line-height);
   letter-spacing: var(--hdr-title-letter-spacing);
   word-spacing: var(--hdr-title-word-spacing);
   color: var(--hdr-title-color);
@@ -92,7 +93,7 @@
    QUOTE — SECONDARY
    ====================== */
 .quoteBlock{
-  max-width: var(--hdr-quote-max-width);
+  /* max-width: var(--hdr-quote-max-width); */
   padding: 0;
   margin-bottom: var(--hdr-quote-margin-bottom);
 }
@@ -110,7 +111,6 @@
 .quoteAuthor{
   margin-top: 2px;
   font-size: var(--hdr-quote-author-size);
-  font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--hdr-quote-author-color);
   text-align: right;
@@ -182,4 +182,3 @@
   letter-spacing: 0.03em;
   color: var(--hdr-date-color);
 }
-```0
