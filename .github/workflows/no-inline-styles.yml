@@ -1,0 +1,27 @@
+name: No Inline Styles Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  no-inline-styles:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if inline styles are used in src/
+        run: |
+          set -e
+          echo "Checking for inline styles ('.style' and 'style=') in src/ ..."
+          if grep -RIn --exclude-dir=node_modules --exclude=*.css --exclude=*.svg "\.style\." src; then
+            echo ""
+            echo "❌ Inline JS styles found (use CSS classes instead)."
+            exit 1
+          fi
+          if grep -RIn --exclude-dir=node_modules --exclude=*.css --exclude=*.svg "style=" src; then
+            echo ""
+            echo "❌ Inline HTML styles found (use CSS classes instead)."
+            exit 1
+          fi
+          echo "✅ No inline styles found."
