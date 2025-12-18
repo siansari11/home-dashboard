@@ -37,87 +37,66 @@ export function renderHeader(el){
   wrap.append(brand, quoteWrap, time, date);
   el.append(wrap);
 
-  function renderQuoteWords(text){
-    quoteText.innerHTML = "";
-
-    var open = document.createElement("span");
-    open.textContent = "“";
-    open.className = "quotePunct";
-    quoteText.appendChild(open);
-
-    var words = String(text || "").trim().split(/\s+/);
-    for (var i = 0; i < words.length; i++){
-      quoteText.appendChild(document.createTextNode(" "));
-
-      var span = document.createElement("span");
-      span.className = "quoteWord";
-      span.textContent = words[i];
-
-      // allowed: this is behavior, not styling (timing)
-      span.style.animationDelay = (i * 260) + "ms";
-      quoteText.appendChild(span);
-    }
-
-    quoteText.appendChild(document.createTextNode(" "));
-
-    var close = document.createElement("span");
-    close.textContent = "”";
-    close.className = "quotePunct";
-    quoteText.appendChild(close);
-  }
-
-  // ----- Quotes state -----
-  var QUOTES_TODAY = [];
-  var qIndex = 0;
-
-  function setQuote(index){
-    if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
-    var q = QUOTES_TODAY[index % QUOTES_TODAY.length];
-    renderQuoteWords(q.text);
+  // -----------------------
+  // Quote rendering (whole block)
+  // -----------------------
+  function setQuoteText(q){
+    quoteText.textContent = "“ " + (q.text || "") + " ”";
     quoteAuthor.textContent = q.author ? ("— " + q.author) : "";
   }
 
-  function transitionToNextQuote(){
-    quoteWrap.classList.remove("quoteIn");
-    quoteWrap.classList.add("quoteOut");
+  // -----------------------
+  // Quotes state
+  // -----------------------
+  var QUOTES_TODAY = [];
+  var qIndex = 0;
+  var rotateTimer = null;
+  var dayCheckTimer = null;
 
-    setTimeout(function(){
-      if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
+  function showQuote(index){
+    if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
+    var q = QUOTES_TODAY[index % QUOTES_TODAY.length];
+    setQuoteText(q);
 
-      qIndex = (qIndex + 1) % QUOTES_TODAY.length;
+    // restart animation cleanly
+    quoteWrap.classList.remove("quoteAnim");
+    // force reflow so animation restarts
+    void quoteWrap.offsetWidth;
+    quoteWrap.classList.add("quoteAnim");
+  }
 
-      quoteWrap.classList.remove("quoteOut");
-      quoteWrap.classList.add("quoteIn");
-
-      setQuote(qIndex);
-    }, 1800);
+  function nextQuote(){
+    if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
+    qIndex = (qIndex + 1) % QUOTES_TODAY.length;
+    showQuote(qIndex);
   }
 
   // ---- Test-day aware "day" ----
   var lastDayId = dayIdNow();
+
   initDailyQuotes();
 
   function initDailyQuotes(){
     buildTodaysQuotes().then(function(list){
       QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
       qIndex = 0;
-      setQuote(qIndex);
+      showQuote(qIndex);
 
-      quoteWrap.classList.remove("quoteOut");
-      quoteWrap.classList.add("quoteIn");
+      if (rotateTimer) clearInterval(rotateTimer);
+      if (dayCheckTimer) clearInterval(dayCheckTimer);
 
-      setInterval(transitionToNextQuote, QUOTE_CFG.rotateMs);
-      setInterval(checkForNewDayAndReload, 1000);
+      rotateTimer = setInterval(nextQuote, QUOTE_CFG.rotateMs);
+      dayCheckTimer = setInterval(checkForNewDayAndReload, 1000);
     }).catch(function(){
       QUOTES_TODAY = fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
       qIndex = 0;
-      setQuote(qIndex);
+      showQuote(qIndex);
 
-      quoteWrap.classList.remove("quoteOut");
-      quoteWrap.classList.add("quoteIn");
+      if (rotateTimer) clearInterval(rotateTimer);
+      if (dayCheckTimer) clearInterval(dayCheckTimer);
 
-      setInterval(transitionToNextQuote, QUOTE_CFG.rotateMs);
-      setInterval(checkForNewDayAndReload, 1000);
+      rotateTimer = setInterval(nextQuote, QUOTE_CFG.rotateMs);
+      dayCheckTimer = setInterval(checkForNewDayAndReload, 1000);
     });
   }
 
@@ -128,7 +107,7 @@ export function renderHeader(el){
       buildTodaysQuotes().then(function(list){
         QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
         qIndex = 0;
-        setQuote(qIndex);
+        showQuote(qIndex);
       }).catch(function(){});
     }
   }
