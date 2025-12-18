@@ -1,121 +1,74 @@
-/* src/styles/header.css
-   Minimal settings you actually care about.
-   Change only the TOP block.
-*/
+/* src/styles/header.css */
 
-:root{
-  /* ===== EDIT ONLY THESE ===== */
-  --titleSize: 52px;
-  --quoteSize: 12px;
-  --timeSize: 14px;
-  --dateSize: 12px;
-
-  --titleWidth: 90%;
-  --quoteWidth: 68%;
-
-  --space: 14px;
-}
-
-/* layout */
 .dashboardHeader{
-  width: 100%;
   display: flex;
   justify-content: center;
-  padding: var(--space) 0;
+  align-items: center;
+  padding: 12px 4px;
   text-align: center;
 }
 
 .dashboardHeader__wrap{
-  width: 100%;
   display: flex;
   flex-direction: column;
+  gap: 10px;
   align-items: center;
+  max-width: 900px;
 }
 
-/* title */
+/* Title */
 .dashboardHeader__brand{
-  width: var(--titleWidth);
-  margin: 0 0 calc(var(--space) * 1.1) 0;
-
   font-family: "Great Vibes", cursive;
-  font-size: var(--titleSize);
+  font-size: 42px;
   line-height: 1.05;
-
-  letter-spacing: 0.04em;
-  word-spacing: 0.18em;
-
-  color: rgba(255,255,255,0.96);
-  text-shadow: 0 6px 16px rgba(0,0,0,0.18);
+  color: rgba(255,255,255,0.92);
+  text-shadow: 0 6px 18px rgba(0,0,0,0.18);
+  margin: 0;
 }
 
-/* quote */
+/* Quote */
 .quoteBlock{
-  width: var(--quoteWidth);
-  margin: 0 0 var(--space) 0;
-  padding: 0;
+  max-width: 820px;
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.14);
+  border: 1px solid rgba(255,255,255,0.18);
+  backdrop-filter: blur(10px);
 }
 
-/* IMPORTANT: quote is NOT the same font as title -> it stops competing */
 .quoteLine{
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: var(--quoteSize);
-  line-height: 1.35;
+  font-family: "Great Vibes", cursive;
+  font-size: 24px;
   font-style: italic;
-
-  color: rgba(255,255,255,0.78);
-  text-shadow: 0 2px 6px rgba(0,0,0,0.12);
-  white-space: pre-wrap;
+  line-height: 1.25;
+  color: rgba(255,255,255,0.86);
+  text-shadow: 0 4px 12px rgba(0,0,0,0.16);
 }
 
 .quoteAuthor{
   margin-top: 4px;
-  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
-  font-size: calc(var(--quoteSize) * 0.9);
-  color: rgba(255,255,255,0.60);
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(255,255,255,0.62);
   text-align: right;
 }
 
-/* word animation (leave as is) */
-.quoteWord{
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(1px);
-  animation: quoteWordIn 2.4s ease forwards;
-}
-
-.quoteIn{
-  opacity: 1;
-  transition: opacity 1.4s ease;
-}
-
-.quoteOut{
-  opacity: 0;
-  transition: opacity 1.6s ease;
-}
-
-@keyframes quoteWordIn{
-  from{ opacity: 0; transform: translateY(1px); }
-  to{ opacity: 1; transform: translateY(0); }
-}
-
-/* clock */
+/* Clock */
 .dashboardClock{
-  padding: 4px 10px;
-  border-radius: 12px;
-  background: rgba(255,255,255,0.10);
-  border: 1px solid rgba(255,255,255,0.14);
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  padding: 8px 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.55);
+  border: 1px solid rgba(15,23,42,0.10);
+  backdrop-filter: blur(10px);
 }
 
 .dashboardClock__time{
-  font-size: var(--timeSize);
-  font-weight: 700;
-  color: rgba(255,255,255,0.82);
+  font-size: 32px;
+  font-weight: 900;
+  color: rgba(15,23,42,0.82);
 }
 
 .dashboardClock__date{
-  font-size: var(--dateSize);
-  font-weight: 600;
-  color: rgba(255,255,255,0.70);
+  font-size: 13px;
+  color: rgba(15,23,42,0.55);
 }
