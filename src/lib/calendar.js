@@ -1,4 +1,6 @@
+// src/lib/calendar.js
 import { CONFIG } from "../config.js";
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 
 var LS_KEY = "menzelijaz.calendar.icsUrl.v1";
 
@@ -85,19 +87,13 @@ function addDays(date, n) {
 
 function firstDailyOccurrenceOnOrAfter(seriesStart, windowStart, intervalDays) {
   var dayMs = 24 * 60 * 60 * 1000;
-
   if (windowStart <= seriesStart) return new Date(seriesStart.getTime());
 
-  // how many whole days between
   var diffDays = Math.floor((windowStart.getTime() - seriesStart.getTime()) / dayMs);
-
-  // round up to next interval multiple
   var steps = Math.ceil(diffDays / intervalDays) * intervalDays;
-
   var candidate = new Date(seriesStart.getTime() + steps * dayMs);
 
   while (candidate < windowStart) candidate = new Date(candidate.getTime() + intervalDays * dayMs);
-
   return candidate;
 }
 
@@ -145,10 +141,12 @@ export async function loadUpcomingEvents() {
   var fetched = await fetchTextWithFallback(icsUrl);
   if (!fetched.text) return { events: [], debug: "Failed to fetch ICS.\n" + fetched.error };
 
-  // 4-day window: Today (00:00) to start of day+4
+  var daysToShow = (DASHBOARD_CONFIG && DASHBOARD_CONFIG.calendar && DASHBOARD_CONFIG.calendar.daysToShow) ? DASHBOARD_CONFIG.calendar.daysToShow : 4;
+
+  // Window: Today 00:00 to start of day + daysToShow
   var now = new Date();
   var startWindow = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  var endWindow = new Date(startWindow.getTime() + 4 * 24 * 60 * 60 * 1000);
+  var endWindow = new Date(startWindow.getTime() + daysToShow * 24 * 60 * 60 * 1000);
 
   var base = parseEvents(fetched.text)
     .filter(function (e) { return (e.start instanceof Date) && !isNaN(e.start); });
@@ -158,11 +156,8 @@ export async function loadUpcomingEvents() {
 
   for (var i = 0; i < base.length; i++) {
     var e = base[i];
-
-    // duration
     var durMs = (e.end instanceof Date && !isNaN(e.end)) ? (e.end.getTime() - e.start.getTime()) : 0;
 
-    // non-recurring
     if (!e.rrule) {
       if (e.start >= startWindow && e.start < endWindow) expanded.push(e);
       continue;
@@ -196,14 +191,13 @@ export async function loadUpcomingEvents() {
 
         occ = addDays(occ, interval);
         guard++;
-        if (guard > 50) break; // safety
+        if (guard > 200) break;
       }
     }
     else if (freq === "WEEKLY") {
       var byday = rule.BYDAY ? String(rule.BYDAY).split(",") : null;
 
-      // walk each day in the 4-day window
-      for (var d = 0; d < 4; d++) {
+      for (var d = 0; d < daysToShow; d++) {
         var day = addDays(new Date(startWindow.getTime()), d);
         var weekday = day.getDay();
 
@@ -242,7 +236,6 @@ export async function loadUpcomingEvents() {
       }
     }
     else {
-      // other recurrence types not supported yet
       if (e.start >= startWindow && e.start < endWindow) expanded.push(e);
     }
   }
@@ -251,6 +244,6 @@ export async function loadUpcomingEvents() {
 
   return {
     events: expanded,
-    debug: "Loaded " + expanded.length + " events (4-day window; recurring supported) via " + fetched.via
+    debug: "Loaded " + expanded.length + " events (windowed) via " + fetched.via
   };
 }
