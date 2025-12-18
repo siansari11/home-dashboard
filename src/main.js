@@ -9,18 +9,29 @@ document.querySelector('#app').innerHTML = `
     <header id="header"></header>
 
     <div class="grid">
-      <section class="card">
+      <!-- Left poster column -->
+      <section class="card strong">
         <h2>Weather</h2>
         <div id="weather">Loading…</div>
+
+        <div style="height:12px"></div>
+
+        <h2>Next events</h2>
+        <div id="agenda">Loading…</div>
       </section>
 
+      <!-- Middle: tasks -->
       <section class="card">
-        <h2>Today & tasks</h2>
-        <div id="agenda"></div>
+        <h2>Tasks</h2>
+        <div id="tasks">(Next step — we’ll add proper tasks UI here)</div>
+        <div style="color:var(--muted); font-size:12px; margin-top:10px">
+          Pilot: local-only. Later: sync when Pi arrives.
+        </div>
       </section>
 
-      <section class="card" style="grid-column: 1 / -1;">
-        <h2>Feed (recipes + home)</h2>
+      <!-- Right: feed -->
+      <section class="card">
+        <h2>Feed</h2>
         <div id="feed">Loading…</div>
       </section>
     </div>
