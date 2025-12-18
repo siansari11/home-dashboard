@@ -128,13 +128,25 @@ export async function loadUpcomingEvents() {
   }
 
   const all = parseEvents(text)
-    .filter(e => e.start instanceof Date && !isNaN(e.start))
-    .sort((a, b) => eTime(a.start) - eTime(b.start));
+  .filter(e => e.start instanceof Date && !isNaN(e.start))
+  .sort((a, b) => eTime(a.start) - eTime(b.start));
 
   const now = new Date();
-  const upcoming = all.filter(e => e.start >= addHours(now, -6)).slice(0, 10);
 
-  return { events: upcoming, debug: `Loaded ${upcoming.length} events via ${via}` };
+  // Start: today (with small grace for early events)
+  const startWindow = addHours(now, -6);
+
+  // End: 5 days from now
+  const endWindow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+
+  const upcoming = all.filter(e =>
+  e.start >= startWindow && e.start < endWindow
+  );
+
+  return {
+    events: upcoming,
+    debug: `Loaded ${upcoming.length} events (next 7 days) via ${via}`
+  };
 }
 
 function eTime(d){ return d.getTime(); }
