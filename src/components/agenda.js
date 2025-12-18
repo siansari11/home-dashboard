@@ -61,27 +61,28 @@ export async function renderAgenda(el){
     return;
   }
 
-  // Group all events by day first
+  // Build routine maps ONCE per render (important)
+  buildRoutineMaps(events);
+
+  // Group by day
   var groups = groupByDay(events);
 
-  // Build UI
   var html = '<div style="display:flex; flex-direction:column; gap:12px">';
 
   for (var gi = 0; gi < groups.length; gi++) {
     var g = groups[gi];
 
-    // Split: DAILY recurring occurrences vs the rest
-    var dailyRecurring = [];
+    // Split into routine vs non-routine
+    var routine = [];
     var rest = [];
 
     for (var k = 0; k < g.items.length; k++){
       var e = g.items[k];
-      if (isDailyRecurringOccurrence(e)) dailyRecurring.push(e);
+      if (isRoutineByBehavior(e)) routine.push(e);
       else rest.push(e);
     }
 
-    // Create a nice compact one-line summary for daily recurring
-    var dailySummary = buildDailySummaryLine(dailyRecurring);
+    var routineLine = buildDailySummaryLine(routine);
 
     html +=
       '<div style="border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,0.55); overflow:hidden;">' +
@@ -93,11 +94,10 @@ export async function renderAgenda(el){
           "</div>" +
         "</div>" +
 
-        // DAILY SUMMARY (one line)
-        (dailySummary
+        (routineLine
           ? '<div style="padding:10px 12px; border-bottom:1px solid rgba(15,23,42,0.08);">' +
               '<div style="font-size:12px; color:var(--muted); font-weight:900; margin-bottom:6px;">Daily routine</div>' +
-              dailySummary +
+              routineLine +
             "</div>"
           : ""
         ) +
@@ -105,8 +105,7 @@ export async function renderAgenda(el){
         '<div style="display:flex; flex-direction:column;">';
 
     if (!rest.length){
-      html +=
-        '<div style="padding:12px; color:var(--muted); font-size:13px;">No one-off or non-daily items.</div>';
+      html += '<div style="padding:12px; color:var(--muted); font-size:13px;">No one-off or non-daily items.</div>';
     } else {
       for (var ei = 0; ei < rest.length; ei++) {
         var e2 = rest[ei];
@@ -115,14 +114,10 @@ export async function renderAgenda(el){
         var isToday = (e2.start instanceof Date) && isSameDay(e2.start, new Date());
         var faded = isPast && isToday;
 
-        // Non-recurring tint (your earlier request)
         var bg = "transparent";
         if (faded) bg = "rgba(15,23,42,0.04)";
         else if (!e2._occ) bg = "rgba(37,99,235,0.08)";
 
-        // We can’t use original index anymore because we filtered;
-        // store the event payload in a data attribute via JSON? too heavy.
-        // Instead: show details using a simple inline handler with safe global registry.
         var detailsId = registerEventForDetails(e2);
 
         html +=
@@ -163,7 +158,6 @@ export async function renderAgenda(el){
   html += "</div>";
   body.innerHTML = html;
 
-  // Wire Details buttons
   var btns = body.querySelectorAll("[data-details]");
   for (var b = 0; b < btns.length; b++) {
     btns[b].addEventListener("click", function (ev) {
@@ -181,62 +175,103 @@ export async function renderAgenda(el){
   }
 }
 
-/* ---------- Daily summary logic ---------- */
+/* ---------- Routine logic (title-only, behavior-based) ---------- */
 
-function isDailyRecurringOccurrence(e){
-  if (!e || !e._occ) return false;
-  if (!e.rrule) return false;
+function buildRoutineMaps(events){
+  // Count distinct days per TITLE, collect time variants for display
+  var daySeen = {};   // titleKey|dayKey -> true
+  var counts = {};    // titleKey -> day count
+  var times = {};     // titleKey -> { "07:15":true, "09:30":true, ... }
 
-  var r = String(e.rrule).toUpperCase();
+  for (var i = 0; i < events.length; i++){
+    var e = events[i];
+    if (!e || !(e.start instanceof Date) || isNaN(e.start)) continue;
 
-  // true daily
-  if (r.indexOf("FREQ=DAILY") >= 0) return true;
+    var titleKey = routineTitleKey(e);
+    if (!titleKey) continue;
 
-  // sometimes "daily" is encoded as WEEKLY on all 7 days
-  // e.g. FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU
-  if (r.indexOf("FREQ=WEEKLY") >= 0 && r.indexOf("BYDAY=") >= 0) {
-    var m = r.match(/BYDAY=([^;]+)/);
-    if (m && m[1]) {
-      var days = m[1].split(",");
-      // normalize and check if all 7 weekday codes are present
-      var set = {};
-      for (var i = 0; i < days.length; i++) set[days[i].trim()] = true;
+    var dk = dateKey(e.start);
+    var combo = titleKey + "|" + dk;
 
-      if (set.MO && set.TU && set.WE && set.TH && set.FR && set.SA && set.SU) {
-        return true;
-      }
+    if (!daySeen[combo]) {
+      daySeen[combo] = true;
+      counts[titleKey] = (counts[titleKey] || 0) + 1;
     }
+
+    var t = formatTime(e);
+    if (!times[titleKey]) times[titleKey] = {};
+    times[titleKey][t] = true;
   }
 
-  return false;
+  window.__ROUTINE_COUNTS = counts;
+  window.__ROUTINE_TIMES = times;
+}
+
+function routineTitleKey(e){
+  var title = String(e.summary || "").trim();
+  if (!title) return "";
+  return title.toLowerCase();
+}
+
+function isRoutineByBehavior(e){
+  // Routine = appears on >= 2 distinct days in the 4-day window
+  // (this handles weekday+weekend split)
+  if (!e || !(e.start instanceof Date) || isNaN(e.start)) return false;
+
+  var key = routineTitleKey(e);
+  if (!key) return false;
+
+  var counts = window.__ROUTINE_COUNTS || {};
+  return (counts[key] || 0) >= 2;
 }
 
 function buildDailySummaryLine(list){
   if (!list || !list.length) return "";
 
-  // Sort by time
-  list.sort(function(a,b){
-    return (a.start && a.start.getTime ? a.start.getTime() : 0) - (b.start && b.start.getTime ? b.start.getTime() : 0);
-  });
+  // Build unique order of titles as they appear (stable)
+  var seen = {};
+  var order = [];
 
-  // Build compact "pills"
-  var pills = "";
   for (var i = 0; i < list.length; i++){
-    var e = list[i];
-    var t = formatTime(e);
-    var title = e.summary || "Routine";
+    var key = routineTitleKey(list[i]);
+    if (!key) continue;
+    if (!seen[key]) { seen[key] = true; order.push(key); }
+  }
+
+  var pills = "";
+  for (var j = 0; j < order.length; j++){
+    var key2 = order[j];
+
+    // display title = first matching event’s original summary
+    var displayTitle = "";
+    for (var k = 0; k < list.length; k++){
+      if (routineTitleKey(list[k]) === key2) { displayTitle = list[k].summary || ""; break; }
+    }
+    if (!displayTitle) displayTitle = key2;
+
+    // show time variants (weekend/weekday)
+    var tset = (window.__ROUTINE_TIMES && window.__ROUTINE_TIMES[key2]) ? window.__ROUTINE_TIMES[key2] : {};
+    var tlist = Object.keys(tset || {});
+    tlist.sort(function(a,b){
+      if (a === "All day") return 1;
+      if (b === "All day") return -1;
+      return a.localeCompare(b);
+    });
+
+    var timeText = tlist.length ? " (" + tlist.join(", ") + ")" : "";
+
     pills +=
       '<span style="display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px;' +
                    'border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.60);' +
                    'font-size:12px; font-weight:900; color:rgba(15,23,42,0.72)">' +
-        escapeHtml(t + " " + title) +
+        escapeHtml(displayTitle + timeText) +
       "</span>";
   }
 
   return '<div style="display:flex; flex-wrap:wrap; align-items:center;">' + pills + "</div>";
 }
 
-/* ---------- Helpers ---------- */
+/* ---------- Details registry ---------- */
 
 function registerEventForDetails(e){
   if (!window.__CAL_DETAILS) window.__CAL_DETAILS = {};
@@ -244,6 +279,8 @@ function registerEventForDetails(e){
   window.__CAL_DETAILS[id] = e;
   return id;
 }
+
+/* ---------- Grouping + formatting helpers ---------- */
 
 function groupByDay(events){
   var groups = [];
@@ -254,17 +291,28 @@ function groupByDay(events){
     var d = e.start instanceof Date ? e.start : null;
     if (!d) continue;
 
-    var key = d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
+    var key = dateKey(d);
 
     if (!map[key]){
       var label = d.toLocaleDateString([], { weekday:"long", month:"long", day:"numeric" });
-      map[key] = { key: key, label: label, items: [], _startIndex: 0 };
+      map[key] = { key: key, label: label, items: [] };
       groups.push(map[key]);
     }
     map[key].items.push(e);
   }
 
+  // Keep each day's items ordered by time
+  for (var g = 0; g < groups.length; g++){
+    groups[g].items.sort(function(a,b){
+      return (a.start && a.start.getTime ? a.start.getTime() : 0) - (b.start && b.start.getTime ? b.start.getTime() : 0);
+    });
+  }
+
   return groups;
+}
+
+function dateKey(d){
+  return d.getFullYear() + "-" + pad2(d.getMonth()+1) + "-" + pad2(d.getDate());
 }
 
 function formatWhen(e){
@@ -293,4 +341,4 @@ function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, function (m) {
     return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
   });
-    }
+}
