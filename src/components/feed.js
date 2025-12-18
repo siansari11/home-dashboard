@@ -51,3 +51,48 @@ export async function renderFeed(el) {
 
 function escapeHtml(s){ return String(s).replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])); }
 function escapeAttr(s){ return escapeHtml(s).replace(/"/g,'&quot;'); }
+// Simple QR overlay (client-side, no libs)
+window.__showQr = function(encodedUrl){
+  const url = decodeURIComponent(encodedUrl);
+
+  // remove existing overlay if any
+  const old = document.getElementById("qrOverlay");
+  if (old) old.remove();
+
+  const overlay = document.createElement("div");
+  overlay.id = "qrOverlay";
+  overlay.style.position = "fixed";
+  overlay.style.inset = "0";
+  overlay.style.background = "rgba(0,0,0,0.45)";
+  overlay.style.display = "flex";
+  overlay.style.alignItems = "center";
+  overlay.style.justifyContent = "center";
+  overlay.style.zIndex = "9999";
+
+  const box = document.createElement("div");
+  box.style.background = "white";
+  box.style.borderRadius = "20px";
+  box.style.padding = "18px";
+  box.style.textAlign = "center";
+  box.style.maxWidth = "260px";
+  box.style.boxShadow = "0 20px 60px rgba(0,0,0,0.3)";
+
+  const img = document.createElement("img");
+  img.src =
+    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" +
+    encodeURIComponent(url);
+  img.style.display = "block";
+  img.style.margin = "0 auto";
+
+  const label = document.createElement("div");
+  label.textContent = "Scan to open on phone";
+  label.style.marginTop = "10px";
+  label.style.fontSize = "13px";
+  label.style.color = "#444";
+
+  box.append(img, label);
+  overlay.append(box);
+
+  overlay.addEventListener("click", () => overlay.remove());
+  document.body.append(overlay);
+};
