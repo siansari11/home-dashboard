@@ -1,5 +1,6 @@
 // src/components/header.js
-// Dashboard header + daily quotes (test mode configurable)
+// Dashboard header + daily quotes (type.fit source, cached, no-repeat history)
+// Copy-paste the whole file.
 
 export function renderHeader(el){
   /* ======================
@@ -15,20 +16,23 @@ export function renderHeader(el){
     // Quote rotation speed (for testing)
     ROTATE_MS: 15 * 1000,
 
-    // How many "days" of history to avoid repeats.
-    // In test mode, 30 "days" = 30 * 5 minutes = 150 minutes.
+    // Avoid repeating any quote within this many "days"
+    // In test mode: 30 "days" = 150 minutes
     HISTORY_DAYS: 30,
 
-    // Fetch attempts per "day" to find unseen quotes
-    MAX_FETCH_ATTEMPTS: 30,
+    // Quote source (free, no key)
+    SOURCE_URL: "https://type.fit/api/quotes",
 
-    // API endpoint (no key)
-    API_URL: "https://api.quotable.io/random?maxLength=110",
+    // Cache the big quote list to avoid re-downloading
+    LIST_CACHE_DAYS: 7, // in "days" (so test mode = 7 * 5 minutes)
 
-    // Keep last N cached "days" of quote sets
-    CACHE_KEEP_DAYS: 7
+    // Safety caps
+    MAX_PICK_ATTEMPTS: 5000, // plenty; list is large
   };
 
+  /* ======================
+     Layout
+     ====================== */
   el.style.display = "flex";
   el.style.justifyContent = "center";
   el.style.alignItems = "center";
@@ -37,9 +41,7 @@ export function renderHeader(el){
 
   var wrap = document.createElement("div");
 
-  /* ======================
-     Household heading
-     ====================== */
+  // Household heading
   var brand = document.createElement("div");
   brand.textContent = "The Menzel-Ijaz Household";
   brand.style.fontFamily = "'Great Vibes', cursive";
@@ -49,9 +51,7 @@ export function renderHeader(el){
   brand.style.color = "rgba(255,255,255,0.92)";
   brand.style.textShadow = "0 6px 20px rgba(0,0,0,0.25)";
 
-  /* ======================
-     Quote block
-     ====================== */
+  // Quote block
   var quoteWrap = document.createElement("div");
   quoteWrap.className = "quoteBlock";
   quoteWrap.style.marginBottom = "12px";
@@ -78,9 +78,7 @@ export function renderHeader(el){
 
   quoteWrap.append(quoteText, quoteAuthor);
 
-  /* ======================
-     Time & date
-     ====================== */
+  // Time & date
   var time = document.createElement("div");
   time.style.fontSize = "36px";
   time.style.fontWeight = "800";
@@ -114,7 +112,7 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
-      // slow exhale pacing (CSS controls duration; this controls spacing between words)
+      // “exhale” pacing
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -128,12 +126,11 @@ export function renderHeader(el){
   }
 
   /* ======================
-     Daily quotes with history (test-day aware)
+     Daily quotes logic
      ====================== */
   var QUOTES_TODAY = [];
   var qIndex = 0;
 
-  // Rotate quotes in the UI
   function setQuote(index){
     if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
     var q = QUOTES_TODAY[index % QUOTES_TODAY.length];
@@ -156,10 +153,14 @@ export function renderHeader(el){
     }, 1800); // match your CSS quoteFadeOut duration
   }
 
+  // ---- Test-day aware "day" ----
+  var lastDayId = dayIdNow();
+
+  // Init + rotate + reload when day flips
   initDailyQuotes();
 
   function initDailyQuotes(){
-    loadDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY).then(function(list){
+    buildTodaysQuotes().then(function(list){
       QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
       qIndex = 0;
       setQuote(qIndex);
@@ -167,10 +168,7 @@ export function renderHeader(el){
       quoteWrap.classList.remove("quoteOut");
       quoteWrap.classList.add("quoteIn");
 
-      // UI rotation speed
       setInterval(transitionToNextQuote, QUOTE_CFG.ROTATE_MS);
-
-      // Reload the set when the "day" flips (in test mode: every 5 minutes)
       setInterval(checkForNewDayAndReload, 1000);
     }).catch(function(){
       QUOTES_TODAY = fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
@@ -185,14 +183,11 @@ export function renderHeader(el){
     });
   }
 
-  var lastDayId = dayIdNow();
-
   function checkForNewDayAndReload(){
     var cur = dayIdNow();
     if (cur !== lastDayId) {
       lastDayId = cur;
-      // fetch a new "daily" set immediately
-      loadDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY).then(function(list){
+      buildTodaysQuotes().then(function(list){
         QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
         qIndex = 0;
         setQuote(qIndex);
@@ -200,11 +195,12 @@ export function renderHeader(el){
     }
   }
 
-  function loadDailyQuotes(n){
-    var todayKey = "menzelijaz.quotes." + String(dayIdNow());
-    var histKey = "menzelijaz.quoteHistory.v2";
-
-    // 1) reuse today's cached set if present
+  /* ======================
+     Quote source: type.fit list (cached)
+     ====================== */
+  function buildTodaysQuotes(){
+    // If we already have today's set cached, use it
+    var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
     try {
       var cached = localStorage.getItem(todayKey);
       if (cached) {
@@ -213,79 +209,150 @@ export function renderHeader(el){
       }
     } catch (e) {}
 
-    // 2) load history map (hash -> lastSeenTimestamp)
-    var history = {};
-    try {
-      var h = JSON.parse(localStorage.getItem(histKey) || "{}");
-      if (h && h.map) history = h.map;
-    } catch (e) {}
+    // Load list -> pick N unseen -> cache day set -> update history
+    return loadQuoteList().then(function(list){
+      if (!list || !list.length) return [];
 
-    function saveHistory(updatedMap){
+      var history = loadHistoryMap();
+      pruneHistory(history);
+
+      var picked = pickUnseenQuotesForDay(list, history, QUOTE_CFG.QUOTES_PER_DAY);
+
+      // Save today's set
       try {
-        var cutoff = Date.now() - (QUOTE_CFG.HISTORY_DAYS * QUOTE_CFG.DAY_MS);
-        var keys = Object.keys(updatedMap);
-        for (var i = 0; i < keys.length; i++){
-          if (updatedMap[keys[i]] < cutoff) delete updatedMap[keys[i]];
-        }
-        localStorage.setItem(histKey, JSON.stringify({ map: updatedMap, savedAt: Date.now() }));
-      } catch (e) {}
-    }
-
-    // 3) fetch until we have n unseen quotes (or give up gracefully)
-    var picked = [];
-    var pickedIds = {};
-    var attempts = 0;
-    var maxAttempts = QUOTE_CFG.MAX_FETCH_ATTEMPTS;
-
-    function fetchOne(){
-      return fetch(QUOTE_CFG.API_URL)
-        .then(function(r){ return r.json(); })
-        .then(function(j){
-          return { text: j && j.content ? j.content : "", author: j && j.author ? j.author : "" };
-        })
-        .catch(function(){ return null; });
-    }
-
-    function loop(){
-      if (picked.length >= n) return Promise.resolve(picked);
-      if (attempts >= maxAttempts) return Promise.resolve(picked);
-
-      attempts++;
-
-      return fetchOne().then(function(q){
-        if (q && q.text) {
-          var id = hashQuoteId(q.text, q.author);
-          if (!history[id] && !pickedIds[id]) {
-            picked.push(q);
-            pickedIds[id] = true;
-          }
-        }
-        return loop();
-      });
-    }
-
-    return loop().then(function(list){
-      if (!list || !list.length) return list;
-
-      // 4) cache today's quote set
-      try {
-        localStorage.setItem(todayKey, JSON.stringify({ items: list, savedAt: Date.now() }));
-        cleanupOldQuoteCache(QUOTE_CFG.CACHE_KEEP_DAYS);
+        localStorage.setItem(todayKey, JSON.stringify({ items: picked, savedAt: Date.now() }));
+        cleanupOldDaySets(7);
       } catch (e) {}
 
-      // 5) update history hashes
-      for (var i = 0; i < list.length; i++){
-        var hid = hashQuoteId(list[i].text, list[i].author);
+      // Update history with hashed IDs only
+      for (var i = 0; i < picked.length; i++){
+        var hid = hashQuoteId(picked[i].text, picked[i].author);
         history[hid] = Date.now();
       }
-      saveHistory(history);
+      saveHistoryMap(history);
 
-      return list;
+      return picked;
     });
   }
 
-  function cleanupOldQuoteCache(keepDays){
-    var prefix = "menzelijaz.quotes.";
+  function loadQuoteList(){
+    var listKey = "menzelijaz.quoteList.v1";
+    var cacheKey = "menzelijaz.quoteList.meta.v1";
+
+    // Check cache validity
+    try {
+      var meta = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+      if (meta && meta.savedAt) {
+        var age = Date.now() - meta.savedAt;
+        var maxAge = QUOTE_CFG.LIST_CACHE_DAYS * QUOTE_CFG.DAY_MS;
+        if (age < maxAge) {
+          var cachedList = JSON.parse(localStorage.getItem(listKey) || "[]");
+          if (cachedList && cachedList.length) return Promise.resolve(cachedList);
+        }
+      }
+    } catch (e) {}
+
+    // Fetch fresh list
+    return fetch(QUOTE_CFG.SOURCE_URL, { cache: "no-store" })
+      .then(function(r){ return r.json(); })
+      .then(function(arr){
+        var cleaned = [];
+        for (var i = 0; i < (arr || []).length; i++){
+          var q = arr[i] || {};
+          var t = String(q.text || "").trim();
+          if (!t) continue;
+
+          cleaned.push({
+            text: t,
+            author: String(q.author || "").trim()
+          });
+        }
+
+        // Save to cache
+        try {
+          localStorage.setItem(listKey, JSON.stringify(cleaned));
+          localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now() }));
+        } catch (e) {}
+
+        return cleaned;
+      });
+  }
+
+  /* ======================
+     Picking + history (hashed IDs only)
+     ====================== */
+  function loadHistoryMap(){
+    var histKey = "menzelijaz.quoteHistory.v3";
+    try {
+      var h = JSON.parse(localStorage.getItem(histKey) || "{}");
+      return (h && h.map) ? h.map : {};
+    } catch (e) {
+      return {};
+    }
+  }
+
+  function saveHistoryMap(map){
+    var histKey = "menzelijaz.quoteHistory.v3";
+    try {
+      localStorage.setItem(histKey, JSON.stringify({ map: map, savedAt: Date.now() }));
+    } catch (e) {}
+  }
+
+  function pruneHistory(map){
+    var cutoff = Date.now() - (QUOTE_CFG.HISTORY_DAYS * QUOTE_CFG.DAY_MS);
+    var keys = Object.keys(map || {});
+    for (var i = 0; i < keys.length; i++){
+      if (map[keys[i]] < cutoff) delete map[keys[i]];
+    }
+  }
+
+  function pickUnseenQuotesForDay(list, history, n){
+    // Deterministic PRNG based on dayId so it's stable within the day
+    var seed = (dayIdNow() >>> 0) + 12345;
+    var picked = [];
+    var pickedIds = {};
+
+    var attempts = 0;
+    while (picked.length < n && attempts < QUOTE_CFG.MAX_PICK_ATTEMPTS) {
+      attempts++;
+
+      // xorshift32
+      seed ^= (seed << 13) >>> 0;
+      seed ^= (seed >>> 17) >>> 0;
+      seed ^= (seed << 5) >>> 0;
+
+      var idx = seed % list.length;
+      var q = list[idx];
+
+      if (!q || !q.text) continue;
+
+      var hid = hashQuoteId(q.text, q.author);
+
+      if (history[hid]) continue;
+      if (pickedIds[hid]) continue;
+
+      pickedIds[hid] = true;
+      picked.push({ text: q.text, author: q.author });
+    }
+
+    // If we couldn't find enough unseen quotes, fill remaining from list anyway
+    // (still deterministic-ish) — better than falling back
+    if (picked.length < n) {
+      for (var i = 0; i < list.length && picked.length < n; i++){
+        var q2 = list[i];
+        if (!q2 || !q2.text) continue;
+        var hid2 = hashQuoteId(q2.text, q2.author);
+        if (pickedIds[hid2]) continue;
+        pickedIds[hid2] = true;
+        picked.push({ text: q2.text, author: q2.author });
+      }
+    }
+
+    return picked;
+  }
+
+  function cleanupOldDaySets(keepDays){
+    var prefix = "menzelijaz.quotes.dayset.";
     var keys = [];
     for (var i = 0; i < localStorage.length; i++){
       var k = localStorage.key(i);
@@ -300,37 +367,8 @@ export function renderHeader(el){
     }
   }
 
-  function fallbackDailyQuotes(n){
-    // Offline/blocked-API fallback: deterministic pick by "dayId"
-    var fallback = [
-      { text: "Small steps, done consistently, become big change.", author: "James Clear" },
-      { text: "Progress, not perfection.", author: "" },
-      { text: "Focus on the next right thing.", author: "" },
-      { text: "Create a home that supports who you are becoming.", author: "" },
-      { text: "What you do every day matters more than what you do once in a while.", author: "Gretchen Rubin" },
-      { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
-      { text: "One task. One breath. One moment at a time.", author: "" },
-      { text: "Make it easy. Make it gentle. Make it daily.", author: "" },
-      { text: "A calm plan beats a perfect plan.", author: "" },
-      { text: "Don’t improve everything. Improve one thing.", author: "" }
-    ];
-
-    var seed = Number(dayIdNow());
-    var out = [];
-    var used = {};
-
-    for (var i = 0; i < n; i++){
-      seed = (seed * 9301 + 49297) % 233280;
-      var idx = seed % fallback.length;
-      while (used[idx]) idx = (idx + 1) % fallback.length;
-      used[idx] = true;
-      out.push(fallback[idx]);
-    }
-    return out;
-  }
-
   function hashQuoteId(text, author){
-    // FNV-1a 32-bit -> short hex (8 chars)
+    // FNV-1a 32-bit hash -> short hex (8 chars)
     var s = (String(author || "") + "|" + String(text || "")).toLowerCase();
     var h = 2166136261;
     for (var i = 0; i < s.length; i++){
@@ -341,8 +379,31 @@ export function renderHeader(el){
   }
 
   function dayIdNow(){
-    // IMPORTANT: "day" is configurable (test mode uses 5 minutes)
     return Math.floor(Date.now() / QUOTE_CFG.DAY_MS);
+  }
+
+  function fallbackDailyQuotes(n){
+    // Used only if type.fit fetch fails completely
+    var fallback = [
+      { text: "Progress, not perfection.", author: "" },
+      { text: "Small steps, done consistently, become big change.", author: "James Clear" },
+      { text: "Make it easy. Make it gentle. Make it daily.", author: "" },
+      { text: "Focus on the next right thing.", author: "" },
+      { text: "A calm plan beats a perfect plan.", author: "" },
+      { text: "Don’t improve everything. Improve one thing.", author: "" }
+    ];
+
+    var seed = (dayIdNow() >>> 0) + 777;
+    var out = [];
+    var used = {};
+    for (var i = 0; i < n; i++){
+      seed = (seed * 9301 + 49297) % 233280;
+      var idx = seed % fallback.length;
+      while (used[idx]) idx = (idx + 1) % fallback.length;
+      used[idx] = true;
+      out.push(fallback[idx]);
+    }
+    return out;
   }
 
   /* ======================
@@ -362,3 +423,4 @@ export function renderHeader(el){
   tick();
   setInterval(tick, 1000 * 10);
 }
+```0
