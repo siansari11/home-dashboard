@@ -11,7 +11,7 @@
 .dashboardHeader__wrap {
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
   max-width: 900px;
 }
@@ -26,15 +26,13 @@
   margin: 0;
 }
 
-/* Quote block */
+/* ======================
+   Quote block (NO border now)
+   ====================== */
 .quoteBlock {
   max-width: 820px;
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.14);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  padding: 6px 8px;
+  background: transparent;
 }
 
 .quoteLine {
@@ -56,7 +54,7 @@
   text-align: right;
 }
 
-/* Word-by-word animation (slow exhale) */
+/* Word-by-word animation */
 .quoteWord {
   display: inline-block;
   opacity: 0;
@@ -94,16 +92,20 @@
   }
 }
 
-/* Clock */
+/* ======================
+   Clock (NOW glass + border)
+   ====================== */
 .dashboardClock {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 2px;
-  padding: 8px 14px;
+  padding: 10px 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.55);
-  border: 1px solid rgba(15, 23, 42, 0.10);
+
+  background: rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
 }
@@ -112,11 +114,11 @@
   font-size: 32px;
   font-weight: 900;
   letter-spacing: -0.02em;
-  color: rgba(15, 23, 42, 0.82);
+  color: rgba(255, 255, 255, 0.92);
 }
 
 .dashboardClock__date {
   font-size: 13px;
   font-weight: 700;
-  color: rgba(15, 23, 42, 0.55);
+  color: rgba(255, 255, 255, 0.70);
 }
