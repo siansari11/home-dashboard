@@ -132,4 +132,3 @@ export async function loadRssItems() {
   all.sort((a, b) => (Date.parse(b.pub) || 0) - (Date.parse(a.pub) || 0));
   return { items: all.slice(0, CONFIG.maxFeedItems), debug };
 }
-```0
