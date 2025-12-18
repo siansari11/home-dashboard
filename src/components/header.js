@@ -1,69 +1,50 @@
 // src/components/header.js
+import "../styles/header.css";
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 
 export function renderHeader(el){
   var QUOTE_CFG = DASHBOARD_CONFIG.quotes;
 
-  el.style.display = "flex";
-  el.style.justifyContent = "center";
-  el.style.alignItems = "center";
-  el.style.padding = "14px 4px 18px 4px";
-  el.style.textAlign = "center";
+  el.className = "dashboardHeader";
 
   var wrap = document.createElement("div");
+  wrap.className = "dashboardHeader__wrap";
 
-  // Household heading
+  // Title
   var brand = document.createElement("div");
+  brand.className = "dashboardHeader__brand";
   brand.textContent = "The Menzel-Ijaz Household";
-  brand.style.fontFamily = "'Great Vibes', cursive";
-  brand.style.fontSize = "44px";
-  brand.style.lineHeight = "1.1";
-  brand.style.marginBottom = "6px";
-  brand.style.color = "rgba(255,255,255,0.92)";
-  brand.style.textShadow = "0 6px 20px rgba(0,0,0,0.25)";
 
-  // Quote block
+  // Quote
   var quoteWrap = document.createElement("div");
   quoteWrap.className = "quoteBlock";
-  quoteWrap.style.marginBottom = "12px";
-  quoteWrap.style.maxWidth = "780px";
-  quoteWrap.style.marginLeft = "auto";
-  quoteWrap.style.marginRight = "auto";
 
   var quoteText = document.createElement("div");
   quoteText.className = "quoteLine";
-  quoteText.style.fontFamily = "'Great Vibes', cursive";
-  quoteText.style.fontSize = "26px";
-  quoteText.style.fontStyle = "italic";
-  quoteText.style.color = "rgba(255,255,255,0.82)";
-  quoteText.style.lineHeight = "1.25";
-  quoteText.style.textShadow = "0 4px 14px rgba(0,0,0,0.25)";
-  quoteText.style.whiteSpace = "pre-wrap";
 
   var quoteAuthor = document.createElement("div");
   quoteAuthor.className = "quoteAuthor";
-  quoteAuthor.style.fontSize = "12px";
-  quoteAuthor.style.marginTop = "4px";
-  quoteAuthor.style.color = "rgba(255,255,255,0.55)";
-  quoteAuthor.style.textAlign = "right";
 
   quoteWrap.append(quoteText, quoteAuthor);
 
-  // Time & date
+  // Clock
+  var clock = document.createElement("div");
+  clock.className = "dashboardClock";
+
   var time = document.createElement("div");
-  time.style.fontSize = "36px";
-  time.style.fontWeight = "800";
-  time.style.letterSpacing = "-0.02em";
-  time.style.color = "rgba(15,23,42,0.85)";
+  time.className = "dashboardClock__time";
 
   var date = document.createElement("div");
-  date.style.color = "rgba(15,23,42,0.55)";
-  date.style.marginTop = "4px";
-  date.style.fontSize = "14px";
+  date.className = "dashboardClock__date";
 
-  wrap.append(brand, quoteWrap, time, date);
+  clock.append(time, date);
+
+  wrap.append(brand, quoteWrap, clock);
   el.append(wrap);
 
+  /* ======================
+     Quote rendering (word-by-word)
+     ====================== */
   function renderQuoteWords(text){
     quoteText.innerHTML = "";
 
@@ -80,7 +61,7 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
-      // slow “exhale” pacing (CSS can further tune duration)
+      // Dynamic delay must remain in JS (one-by-one word reveal)
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -93,7 +74,9 @@ export function renderHeader(el){
     quoteText.appendChild(close);
   }
 
-  // ----- Quotes state -----
+  /* ======================
+     Quotes state
+     ====================== */
   var QUOTES_TODAY = [];
   var qIndex = 0;
 
@@ -120,6 +103,7 @@ export function renderHeader(el){
     }, 1800);
   }
 
+  // ---- Test-day aware "day" ----
   var lastDayId = dayIdNow();
 
   initDailyQuotes();
@@ -160,7 +144,9 @@ export function renderHeader(el){
     }
   }
 
-  // ----- type.fit list fetch + cache + no-repeat selection -----
+  /* ======================
+     Quote source: type.fit list (cached)
+     ====================== */
   function buildTodaysQuotes(){
     var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
 
@@ -264,8 +250,9 @@ export function renderHeader(el){
     var picked = [];
     var pickedIds = {};
     var attempts = 0;
+    var maxAttempts = QUOTE_CFG.maxPickAttempts || 5000;
 
-    while (picked.length < n && attempts < (QUOTE_CFG.maxPickAttempts || 5000)) {
+    while (picked.length < n && attempts < maxAttempts) {
       attempts++;
 
       // xorshift32
@@ -286,7 +273,7 @@ export function renderHeader(el){
       picked.push({ text: q.text, author: q.author });
     }
 
-    // If we couldn't find enough unseen quotes, fill remaining deterministically from list
+    // If we couldn't find enough unseen quotes, fill remaining deterministically
     if (picked.length < n) {
       for (var i = 0; i < list.length && picked.length < n; i++){
         var q2 = list[i];
@@ -369,4 +356,4 @@ export function renderHeader(el){
 
   tick();
   setInterval(tick, 1000 * 10);
-        }
+}
