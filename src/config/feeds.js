@@ -16,7 +16,6 @@ export const FEED_GROUPS = [
     title: "Small Apartment & Decluttering",
     urls: [
       "https://www.thespruce.com/rss",
-      "https://www.apartmenttherapy.com/main.rss",
     ],
   },
 ];
