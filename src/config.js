@@ -2,12 +2,17 @@ export const CONFIG = {
   location: { name: "Berlin", lat: 52.52, lon: 13.405 },
 
   rssFeeds: [
-    { name: "Minimalist Baker", url: "https://minimalistbaker.com/feed/" },
-    { name: "Apartment Therapy", url: "https://www.apartmenttherapy.com/main.rss" }
+    { name: "Skinnytaste", url: "https://www.skinnytaste.com/feed/" },
+    { name: "The Kitchn", url: "https://www.thekitchn.com/main.rss" },
+    { name: "Apartment Therapy", url: "https://www.apartmenttherapy.com/main.rss" },
+    { name: "A Slob Comes Clean", url: "https://www.aslobcomesclean.com/feed/" }
   ],
 
   maxFeedItems: 12,
 
-  // Pilot-only: uses a free CORS proxy. Later (Pi) we remove this.
-  corsProxy: (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`
+  // Pilot mode: try multiple public CORS proxies (they can be flaky)
+  corsProxies: [
+    (url) => `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,     // AllOrigins 2
+    (url) => `https://corsproxy.io/?${encodeURIComponent(url)}`                  // common free proxy pattern 3
+  ]
 };
