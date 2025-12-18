@@ -1,30 +1,32 @@
 import { CONFIG } from '../config.js';
 
 async function fetchTextWithFallback(url) {
-  const errors = [];
-  for (const mk of CONFIG.corsProxies) {
-    const proxied = mk(url);
-    try {
-      const res = await fetch(proxied, { cache: "no-store" });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      return { text: await res.text(), via: proxied, error: null };
-    } catch (e) {
-      errors.push(`${proxied} → ${String(e.message || e)}`);
-    }
-  }
-  return { text: null, via: null, error: errors.join("\n") };
+  consfunction firstHttpsImageFromHtml(html) {
+  if (!html) return null;
+  const m = String(html).match(/<img[^>]+src=["']([^"']+)["']/i);
+  if (!m) return null;
+  const url = m[1];
+  if (url.startsWith("https://")) return url;
+  return null; // avoid mixed content on https pages
 }
 
-function pickImage(item) {
-  const url =
-    item.querySelector("media\\:content")?.getAttribute("url") ||
-    item.querySelector("media\\:thumbnail")?.getAttribute("url") ||
-    item.querySelector("enclosure")?.getAttribute("url") ||
+function pickImage(node){
+  // Common explicit image fields
+  const explicit =
+    node.querySelector("media\\:content")?.getAttribute("url") ||
+    node.querySelector("media\\:thumbnail")?.getAttribute("url") ||
+    node.querySelector("enclosure")?.getAttribute("url") ||
     null;
 
-  // avoid mixed-content blocking on https pages
-  if (url && url.startsWith("http://")) return null;
-  return url;
+  if (explicit && explicit.startsWith("https://")) return explicit;
+
+  // Fallback: description/content:encoded often contains <img ...>
+  const html =
+    node.querySelector("content\\:encoded")?.textContent ||
+    node.querySelector("description")?.textContent ||
+    "";
+
+  return firstHttpsImageFromHtml(html);
 }
 
 function parseRssOrAtom(xmlText, sourceName) {
