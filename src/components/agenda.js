@@ -61,64 +61,100 @@ export async function renderAgenda(el){
     return;
   }
 
-  // Group by day
+  // Group all events by day first
   var groups = groupByDay(events);
 
+  // Build UI
   var html = '<div style="display:flex; flex-direction:column; gap:12px">';
 
   for (var gi = 0; gi < groups.length; gi++) {
     var g = groups[gi];
+
+    // Split: DAILY recurring occurrences vs the rest
+    var dailyRecurring = [];
+    var rest = [];
+
+    for (var k = 0; k < g.items.length; k++){
+      var e = g.items[k];
+      if (isDailyRecurringOccurrence(e)) dailyRecurring.push(e);
+      else rest.push(e);
+    }
+
+    // Create a nice compact one-line summary for daily recurring
+    var dailySummary = buildDailySummaryLine(dailyRecurring);
 
     html +=
       '<div style="border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,0.55); overflow:hidden;">' +
         '<div style="padding:10px 12px; background:rgba(255,255,255,0.55); border-bottom:1px solid var(--line);' +
                     'display:flex; justify-content:space-between; align-items:center; gap:10px;">' +
           '<div style="font-weight:900; color:rgba(15,23,42,0.78)">' + escapeHtml(g.label) + "</div>" +
-          '<div style="font-size:12px; color:var(--muted)">' + g.items.length + (g.items.length === 1 ? " event" : " events") + "</div>" +
+          '<div style="font-size:12px; color:var(--muted)">' +
+            rest.length + (rest.length === 1 ? " item" : " items") +
+          "</div>" +
         "</div>" +
+
+        // DAILY SUMMARY (one line)
+        (dailySummary
+          ? '<div style="padding:10px 12px; border-bottom:1px solid rgba(15,23,42,0.08);">' +
+              '<div style="font-size:12px; color:var(--muted); font-weight:900; margin-bottom:6px;">Daily routine</div>' +
+              dailySummary +
+            "</div>"
+          : ""
+        ) +
+
         '<div style="display:flex; flex-direction:column;">';
 
-    for (var ei = 0; ei < g.items.length; ei++) {
-      var e = g.items[ei];
-      var idx = g._startIndex + ei;
-
-      var isPast = (e.start instanceof Date) && (e.start.getTime() < Date.now());
-      var isToday = (e.start instanceof Date) && isSameDay(e.start, new Date());
-      var faded = isPast && isToday;
-
-      var bg = "transparent";
-      if (faded) bg = "rgba(15,23,42,0.04)";
-      else if (!e._occ) bg = "rgba(37,99,235,0.08)";
-
+    if (!rest.length){
       html +=
-        '<div style="display:grid; grid-template-columns:86px 1fr auto; gap:10px; padding:10px 12px; align-items:center;' +
-                    (ei === 0 ? "" : "border-top:1px solid rgba(15,23,42,0.08);") +
-                    "background:" + bg + ";" +
-                    (faded ? "opacity:0.60;" : "opacity:1;") +
-               '">' +
+        '<div style="padding:12px; color:var(--muted); font-size:13px;">No one-off or non-daily items.</div>';
+    } else {
+      for (var ei = 0; ei < rest.length; ei++) {
+        var e2 = rest[ei];
 
-          '<div style="font-weight:900; color:rgba(15,23,42,0.70); font-size:13px;">' +
-            escapeHtml(formatTime(e)) +
-          "</div>" +
+        var isPast = (e2.start instanceof Date) && (e2.start.getTime() < Date.now());
+        var isToday = (e2.start instanceof Date) && isSameDay(e2.start, new Date());
+        var faded = isPast && isToday;
 
-          '<div style="min-width:0;">' +
-            '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:14px;' +
-                        "overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" +
-                        "text-decoration:" + (faded ? "line-through" : "none") + ";" +
+        // Non-recurring tint (your earlier request)
+        var bg = "transparent";
+        if (faded) bg = "rgba(15,23,42,0.04)";
+        else if (!e2._occ) bg = "rgba(37,99,235,0.08)";
+
+        // We can’t use original index anymore because we filtered;
+        // store the event payload in a data attribute via JSON? too heavy.
+        // Instead: show details using a simple inline handler with safe global registry.
+        var detailsId = registerEventForDetails(e2);
+
+        html +=
+          '<div style="display:grid; grid-template-columns:86px 1fr auto; gap:10px; padding:10px 12px; align-items:center;' +
+                      (ei === 0 ? "" : "border-top:1px solid rgba(15,23,42,0.08);") +
+                      "background:" + bg + ";" +
+                      (faded ? "opacity:0.60;" : "opacity:1;") +
                  '">' +
-              escapeHtml(e.summary || "Event") +
-            "</div>" +
-            '<div style="color:var(--muted); font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
-              (e.location ? escapeHtml(e.location) : "") +
-            "</div>" +
-          "</div>" +
 
-          '<button data-details="' + idx + '" style="border:1px solid var(--line); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.72);' +
-                 'border-radius:12px; padding:9px 10px; font-weight:900; font-size:13px; white-space:nowrap">' +
-            "Details" +
-          "</button>" +
+            '<div style="font-weight:900; color:rgba(15,23,42,0.70); font-size:13px;">' +
+              escapeHtml(formatTime(e2)) +
+            "</div>" +
 
-        "</div>";
+            '<div style="min-width:0;">' +
+              '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:14px;' +
+                          "overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" +
+                          "text-decoration:" + (faded ? "line-through" : "none") + ";" +
+                   '">' +
+                escapeHtml(e2.summary || "Event") +
+              "</div>" +
+              '<div style="color:var(--muted); font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                (e2.location ? escapeHtml(e2.location) : "") +
+              "</div>" +
+            "</div>" +
+
+            '<button data-details="' + detailsId + '" style="border:1px solid var(--line); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.72);' +
+                   'border-radius:12px; padding:9px 10px; font-weight:900; font-size:13px; white-space:nowrap">' +
+              "Details" +
+            "</button>" +
+
+          "</div>";
+      }
     }
 
     html += "</div></div>";
@@ -127,12 +163,12 @@ export async function renderAgenda(el){
   html += "</div>";
   body.innerHTML = html;
 
+  // Wire Details buttons
   var btns = body.querySelectorAll("[data-details]");
   for (var b = 0; b < btns.length; b++) {
     btns[b].addEventListener("click", function (ev) {
-      var idxStr = ev.currentTarget.getAttribute("data-details");
-      var idx = parseInt(idxStr, 10);
-      var e = events[idx];
+      var id = ev.currentTarget.getAttribute("data-details");
+      var e = window.__CAL_DETAILS && window.__CAL_DETAILS[id];
       if (!e) return;
 
       alert(
@@ -143,6 +179,50 @@ export async function renderAgenda(el){
       );
     });
   }
+}
+
+/* ---------- Daily summary logic ---------- */
+
+function isDailyRecurringOccurrence(e){
+  // Our recurring instances have _occ: true and carry the master RRULE string
+  // DAILY recurring => RRULE contains FREQ=DAILY
+  if (!e || !e._occ) return false;
+  if (!e.rrule) return false;
+  return String(e.rrule).toUpperCase().indexOf("FREQ=DAILY") >= 0;
+}
+
+function buildDailySummaryLine(list){
+  if (!list || !list.length) return "";
+
+  // Sort by time
+  list.sort(function(a,b){
+    return (a.start && a.start.getTime ? a.start.getTime() : 0) - (b.start && b.start.getTime ? b.start.getTime() : 0);
+  });
+
+  // Build compact "pills"
+  var pills = "";
+  for (var i = 0; i < list.length; i++){
+    var e = list[i];
+    var t = formatTime(e);
+    var title = e.summary || "Routine";
+    pills +=
+      '<span style="display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px;' +
+                   'border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.60);' +
+                   'font-size:12px; font-weight:900; color:rgba(15,23,42,0.72)">' +
+        escapeHtml(t + " " + title) +
+      "</span>";
+  }
+
+  return '<div style="display:flex; flex-wrap:wrap; align-items:center;">' + pills + "</div>";
+}
+
+/* ---------- Helpers ---------- */
+
+function registerEventForDetails(e){
+  if (!window.__CAL_DETAILS) window.__CAL_DETAILS = {};
+  var id = String(Date.now()) + "_" + Math.random().toString(16).slice(2);
+  window.__CAL_DETAILS[id] = e;
+  return id;
 }
 
 function groupByDay(events){
@@ -162,12 +242,6 @@ function groupByDay(events){
       groups.push(map[key]);
     }
     map[key].items.push(e);
-  }
-
-  var running = 0;
-  for (var g = 0; g < groups.length; g++){
-    groups[g]._startIndex = running;
-    running += groups[g].items.length;
   }
 
   return groups;
@@ -199,4 +273,4 @@ function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, function (m) {
     return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
   });
-}
+    }
