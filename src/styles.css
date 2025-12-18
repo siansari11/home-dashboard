@@ -99,3 +99,38 @@ a{ color: inherit; text-decoration:none; }
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
+
+/* Quote block fades out before switching */
+.quoteBlock.quoteOut{
+  animation: quoteFadeOut 900ms ease-in both;
+}
+.quoteBlock.quoteIn{
+  animation: quoteFadeIn 900ms ease-out both;
+}
+
+@keyframes quoteFadeOut{
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-6px); }
+}
+@keyframes quoteFadeIn{
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Each word appears one by one */
+.quoteWord{
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(6px);
+  animation: wordIn 850ms ease-out both; /* slightly slower */
+}
+
+@keyframes wordIn{
+  from { opacity: 0; transform: translateY(6px); filter: blur(0.6px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0px); }
+}
+
+/* quotation marks (punctuation) appear immediately but subtly */
+.quotePunct{
+  opacity: 0.92;
+}
