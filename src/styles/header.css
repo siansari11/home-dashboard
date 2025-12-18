@@ -15,20 +15,20 @@
   align-items: center;
 }
 
+/* Title */
 .dashboardHeader__brand{
   font-family: "Great Vibes", cursive;
   font-size: 44px;
   line-height: 1.1;
   margin-bottom: 6px;
 
-  /* “bigger” feel via word spacing */
   word-spacing: 0.22em;
 
   color: rgba(255,255,255,0.92);
   text-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
-/* Quote block spacing controls distance to time */
+/* Quote spacing (creates the gap before time) */
 .quoteBlock{
   margin-bottom: 22px;
   max-width: 780px;
@@ -51,6 +51,18 @@
   margin-top: 4px;
   color: rgba(255,255,255,0.55);
   text-align: right;
+}
+
+/* Whole quote animation (no per-word timing) */
+.quoteAnim{
+  animation: quoteBreath 2.2s ease both;
+}
+
+/* a gentle inhale/exhale appearance */
+@keyframes quoteBreath{
+  0%   { opacity: 0; transform: translateY(6px); filter: blur(0.6px); }
+  60%  { opacity: 1; transform: translateY(0); filter: blur(0px); }
+  100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
 }
 
 /* Time glass */
@@ -76,31 +88,4 @@
   font-size: 12px;
   text-shadow: 0 4px 12px rgba(0,0,0,0.18);
   opacity: 0.82;
-}
-
-/* Quote animation helpers */
-.quoteWord{
-  display: inline-block;
-  opacity: 0;
-  transform: translateY(1px);
-  animation: quoteWordIn 2.4s ease forwards;
-}
-
-.quotePunct{ opacity: 0.9; }
-
-.quoteIn{
-  opacity: 1;
-  transform: translateY(0);
-  transition: opacity 1.4s ease, transform 1.4s ease;
-}
-
-.quoteOut{
-  opacity: 0;
-  transform: translateY(3px);
-  transition: opacity 1.6s ease, transform 1.6s ease;
-}
-
-@keyframes quoteWordIn{
-  0%{ opacity: 0; transform: translateY(1px); filter: blur(0.4px); }
-  100%{ opacity: 1; transform: translateY(0); filter: blur(0px); }
 }
