@@ -91,3 +91,11 @@ a{ color: inherit; text-decoration:none; }
   font-size: 13px;
   white-space:nowrap;
 }
+.quoteLine.quoteAnimate{
+  animation: quoteIn 700ms ease-out both;
+}
+
+@keyframes quoteIn{
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
