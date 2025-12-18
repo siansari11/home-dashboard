@@ -49,17 +49,29 @@ export function renderHeader(el){
 
   quoteWrap.append(quoteText, quoteAuthor);
 
-  // Time & date
+  // Time & date (match title color + smaller time + light glass around time)
   var time = document.createElement("div");
-  time.style.fontSize = "36px";
-  time.style.fontWeight = "800";
-  time.style.letterSpacing = "-0.02em";
-  time.style.color = "rgba(15,23,42,0.85)";
+  time.style.display = "inline-block";
+  time.style.fontSize = "22px"; // reduced
+  time.style.fontWeight = "700";
+  time.style.letterSpacing = "0.02em";
+  time.style.color = "rgba(255,255,255,0.92)";
+
+  // very light "glass" around time only
+  time.style.padding = "6px 12px";
+  time.style.borderRadius = "14px";
+  time.style.background = "rgba(255,255,255,0.10)";
+  time.style.border = "1px solid rgba(255,255,255,0.14)";
+  time.style.backdropFilter = "blur(8px)";
+  time.style.webkitBackdropFilter = "blur(8px)";
+  time.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)";
 
   var date = document.createElement("div");
-  date.style.color = "rgba(15,23,42,0.55)";
-  date.style.marginTop = "4px";
-  date.style.fontSize = "14px";
+  date.style.color = "rgba(255,255,255,0.92)"; // match title
+  date.style.marginTop = "6px";
+  date.style.fontSize = "12px";
+  date.style.textShadow = "0 4px 12px rgba(0,0,0,0.18)";
+  date.style.opacity = "0.82";
 
   wrap.append(brand, quoteWrap, time, date);
   el.append(wrap);
@@ -80,7 +92,7 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
-      // slow “exhale” pacing (CSS can further tune duration)
+      // slow “exhale” pacing
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -164,7 +176,6 @@ export function renderHeader(el){
   function buildTodaysQuotes(){
     var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
 
-    // reuse today's set if cached
     try {
       var cached = localStorage.getItem(todayKey);
       if (cached) {
@@ -181,13 +192,11 @@ export function renderHeader(el){
 
       var picked = pickUnseenQuotesForDay(list, history, QUOTE_CFG.quotesPerDay);
 
-      // cache today's set
       try {
         localStorage.setItem(todayKey, JSON.stringify({ items: picked, savedAt: Date.now() }));
         cleanupOldDaySets(7);
       } catch (e) {}
 
-      // update history (hashed IDs only)
       for (var i = 0; i < picked.length; i++){
         history[hashQuoteId(picked[i].text, picked[i].author)] = Date.now();
       }
@@ -201,7 +210,6 @@ export function renderHeader(el){
     var listKey = "menzelijaz.quoteList.v1";
     var metaKey = "menzelijaz.quoteList.meta.v1";
 
-    // cache validity
     try {
       var meta = JSON.parse(localStorage.getItem(metaKey) || "{}");
       if (meta && meta.savedAt) {
@@ -268,7 +276,6 @@ export function renderHeader(el){
     while (picked.length < n && attempts < (QUOTE_CFG.maxPickAttempts || 5000)) {
       attempts++;
 
-      // xorshift32
       seed ^= (seed << 13) >>> 0;
       seed ^= (seed >>> 17) >>> 0;
       seed ^= (seed << 5) >>> 0;
@@ -286,7 +293,6 @@ export function renderHeader(el){
       picked.push({ text: q.text, author: q.author });
     }
 
-    // If we couldn't find enough unseen quotes, fill remaining deterministically from list
     if (picked.length < n) {
       for (var i = 0; i < list.length && picked.length < n; i++){
         var q2 = list[i];
@@ -318,7 +324,6 @@ export function renderHeader(el){
   }
 
   function hashQuoteId(text, author){
-    // FNV-1a 32-bit hash -> short hex (8 chars)
     var s = (String(author || "") + "|" + String(text || "")).toLowerCase();
     var h = 2166136261;
     for (var i = 0; i < s.length; i++){
