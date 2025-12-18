@@ -1,0 +1,136 @@
+:root{
+  --bg: #f4f6fb;
+  --text: #0f172a;
+  --muted: #475569;
+  --line: rgba(15, 23, 42, 0.10);
+  --panel: rgba(255,255,255,0.55);
+  --panel-strong: rgba(255,255,255,0.72);
+  --accent: #2563eb;
+  --radius: 22px;
+}
+
+*{ box-sizing:border-box; }
+html, body { height:100%; }
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
+
+  background-image:
+    linear-gradient(
+      180deg,
+      rgba(20,25,40,0.35),
+      rgba(244,246,251,0.85)
+    ),
+    url("/home-dashboard/bg.jpg");
+
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+}
+
+.wrap{ padding:18px; max-width:1280px; margin:0 auto; }
+
+header{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding: 8px 4px 14px 4px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: 0.95fr 1.05fr 1.2fr; /* landscape */
+  gap:14px;
+  align-items:start;
+}
+
+/* Default: stack on small portrait screens (phones) */
+@media (max-width: 980px) and (orientation: portrait){
+  .grid{ grid-template-columns: 1fr; }
+}
+
+/* Force landscape layout when device is landscape (phone rotated, tablets, TV) */
+@media (orientation: landscape){
+  .grid{ grid-template-columns: 0.95fr 1.05fr 1.2fr; }
+}
+
+.card{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.card.strong{ background: var(--panel-strong); }
+
+h2{
+  margin:0 0 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+@media (min-width: 900px){
+  header div div:first-child{
+    font-size: 52px; /* household name bigger on tablets */
+  }
+}
+
+a{ color: inherit; text-decoration:none; }
+
+.pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,0.55);
+  color: var(--muted);
+  font-size: 13px;
+  white-space:nowrap;
+}
+.quoteLine.quoteAnimate{
+  animation: quoteIn 700ms ease-out both;
+}
+
+@keyframes quoteIn{
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Quote block fades out before switching */
+/* Slow, breathing fade out/in */
+.quoteBlock.quoteOut{
+  animation: quoteFadeOut 1800ms ease-in-out both;
+}
+.quoteBlock.quoteIn{
+  animation: quoteFadeIn 2200ms ease-in-out both;
+}
+
+@keyframes quoteFadeOut{
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes quoteFadeIn{
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Each word appears one by one — slow exhale */
+.quoteWord{
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(10px);
+  animation: wordIn 1500ms ease-in-out both;
+}
+
+@keyframes wordIn{
+  from { opacity: 0; transform: translateY(10px); filter: blur(1px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0px); }
+}
+
+.quotePunct{
+  opacity: 0.9;
+}
