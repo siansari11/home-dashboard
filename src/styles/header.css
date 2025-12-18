@@ -4,71 +4,103 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 12px 4px;
+  padding: 14px 4px 18px 4px;
   text-align: center;
 }
 
 .dashboardHeader__wrap{
+  width: 100%;
   display: flex;
   flex-direction: column;
-  gap: 10px;
   align-items: center;
-  max-width: 900px;
 }
 
-/* Title */
 .dashboardHeader__brand{
   font-family: "Great Vibes", cursive;
-  font-size: 42px;
-  line-height: 1.05;
+  font-size: 44px;
+  line-height: 1.1;
+  margin-bottom: 6px;
+
+  /* “bigger” feel via word spacing */
+  word-spacing: 0.22em;
+
   color: rgba(255,255,255,0.92);
-  text-shadow: 0 6px 18px rgba(0,0,0,0.18);
-  margin: 0;
+  text-shadow: 0 6px 20px rgba(0,0,0,0.25);
 }
 
-/* Quote */
+/* Quote block spacing controls distance to time */
 .quoteBlock{
-  max-width: 820px;
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.14);
-  border: 1px solid rgba(255,255,255,0.18);
-  backdrop-filter: blur(10px);
+  margin-bottom: 22px;
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .quoteLine{
   font-family: "Great Vibes", cursive;
-  font-size: 24px;
+  font-size: 26px;
   font-style: italic;
+  color: rgba(255,255,255,0.82);
   line-height: 1.25;
-  color: rgba(255,255,255,0.86);
-  text-shadow: 0 4px 12px rgba(0,0,0,0.16);
+  text-shadow: 0 4px 14px rgba(0,0,0,0.25);
+  white-space: pre-wrap;
 }
 
 .quoteAuthor{
-  margin-top: 4px;
   font-size: 12px;
-  font-weight: 700;
-  color: rgba(255,255,255,0.62);
+  margin-top: 4px;
+  color: rgba(255,255,255,0.55);
   text-align: right;
 }
 
-/* Clock */
-.dashboardClock{
-  padding: 8px 14px;
-  border-radius: 18px;
-  background: rgba(255,255,255,0.55);
-  border: 1px solid rgba(15,23,42,0.10);
-  backdrop-filter: blur(10px);
-}
-
+/* Time glass */
 .dashboardClock__time{
-  font-size: 32px;
-  font-weight: 900;
-  color: rgba(15,23,42,0.82);
+  display: inline-block;
+  font-size: 22px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: rgba(255,255,255,0.92);
+
+  padding: 6px 12px;
+  border-radius: 14px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.12);
 }
 
 .dashboardClock__date{
-  font-size: 13px;
-  color: rgba(15,23,42,0.55);
+  color: rgba(255,255,255,0.92);
+  margin-top: 6px;
+  font-size: 12px;
+  text-shadow: 0 4px 12px rgba(0,0,0,0.18);
+  opacity: 0.82;
+}
+
+/* Quote animation helpers */
+.quoteWord{
+  display: inline-block;
+  opacity: 0;
+  transform: translateY(1px);
+  animation: quoteWordIn 2.4s ease forwards;
+}
+
+.quotePunct{ opacity: 0.9; }
+
+.quoteIn{
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 1.4s ease, transform 1.4s ease;
+}
+
+.quoteOut{
+  opacity: 0;
+  transform: translateY(3px);
+  transition: opacity 1.6s ease, transform 1.6s ease;
+}
+
+@keyframes quoteWordIn{
+  0%{ opacity: 0; transform: translateY(1px); filter: blur(0.4px); }
+  100%{ opacity: 1; transform: translateY(0); filter: blur(0px); }
 }
