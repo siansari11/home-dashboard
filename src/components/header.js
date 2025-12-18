@@ -1,38 +1,9 @@
 // src/components/header.js
-// Dashboard header + daily quotes (type.fit source, cached, no-repeat history)
-// Copy-paste the whole file.
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 
 export function renderHeader(el){
-  /* ======================
-     EASY CONFIG (edit here only)
-     ====================== */
-  var QUOTE_CFG = {
-    QUOTES_PER_DAY: 4,
+  var QUOTE_CFG = DASHBOARD_CONFIG.quotes;
 
-    // TEST MODE:
-    // Treat "a day" as 5 minutes so you can quickly verify uniqueness + caching.
-    DAY_MS: 5 * 60 * 1000,
-
-    // Quote rotation speed (for testing)
-    ROTATE_MS: 15 * 1000,
-
-    // Avoid repeating any quote within this many "days"
-    // In test mode: 30 "days" = 150 minutes
-    HISTORY_DAYS: 30,
-
-    // Quote source (free, no key)
-    SOURCE_URL: "https://type.fit/api/quotes",
-
-    // Cache the big quote list to avoid re-downloading
-    LIST_CACHE_DAYS: 7, // in "days" (so test mode = 7 * 5 minutes)
-
-    // Safety caps
-    MAX_PICK_ATTEMPTS: 5000, // plenty; list is large
-  };
-
-  /* ======================
-     Layout
-     ====================== */
   el.style.display = "flex";
   el.style.justifyContent = "center";
   el.style.alignItems = "center";
@@ -93,9 +64,6 @@ export function renderHeader(el){
   wrap.append(brand, quoteWrap, time, date);
   el.append(wrap);
 
-  /* ======================
-     Quote rendering (word-by-word)
-     ====================== */
   function renderQuoteWords(text){
     quoteText.innerHTML = "";
 
@@ -112,7 +80,7 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
-      // “exhale” pacing
+      // slow “exhale” pacing (CSS can further tune duration)
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -125,9 +93,7 @@ export function renderHeader(el){
     quoteText.appendChild(close);
   }
 
-  /* ======================
-     Daily quotes logic
-     ====================== */
+  // ----- Quotes state -----
   var QUOTES_TODAY = [];
   var qIndex = 0;
 
@@ -144,41 +110,40 @@ export function renderHeader(el){
 
     setTimeout(function(){
       if (!QUOTES_TODAY || !QUOTES_TODAY.length) return;
+
       qIndex = (qIndex + 1) % QUOTES_TODAY.length;
 
       quoteWrap.classList.remove("quoteOut");
       quoteWrap.classList.add("quoteIn");
 
       setQuote(qIndex);
-    }, 1800); // match your CSS quoteFadeOut duration
+    }, 1800);
   }
 
-  // ---- Test-day aware "day" ----
   var lastDayId = dayIdNow();
 
-  // Init + rotate + reload when day flips
   initDailyQuotes();
 
   function initDailyQuotes(){
     buildTodaysQuotes().then(function(list){
-      QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
+      QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
       qIndex = 0;
       setQuote(qIndex);
 
       quoteWrap.classList.remove("quoteOut");
       quoteWrap.classList.add("quoteIn");
 
-      setInterval(transitionToNextQuote, QUOTE_CFG.ROTATE_MS);
+      setInterval(transitionToNextQuote, QUOTE_CFG.rotateMs);
       setInterval(checkForNewDayAndReload, 1000);
     }).catch(function(){
-      QUOTES_TODAY = fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
+      QUOTES_TODAY = fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
       qIndex = 0;
       setQuote(qIndex);
 
       quoteWrap.classList.remove("quoteOut");
       quoteWrap.classList.add("quoteIn");
 
-      setInterval(transitionToNextQuote, QUOTE_CFG.ROTATE_MS);
+      setInterval(transitionToNextQuote, QUOTE_CFG.rotateMs);
       setInterval(checkForNewDayAndReload, 1000);
     });
   }
@@ -188,19 +153,18 @@ export function renderHeader(el){
     if (cur !== lastDayId) {
       lastDayId = cur;
       buildTodaysQuotes().then(function(list){
-        QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.QUOTES_PER_DAY);
+        QUOTES_TODAY = (list && list.length) ? list : fallbackDailyQuotes(QUOTE_CFG.quotesPerDay);
         qIndex = 0;
         setQuote(qIndex);
       }).catch(function(){});
     }
   }
 
-  /* ======================
-     Quote source: type.fit list (cached)
-     ====================== */
+  // ----- type.fit list fetch + cache + no-repeat selection -----
   function buildTodaysQuotes(){
-    // If we already have today's set cached, use it
     var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
+
+    // reuse today's set if cached
     try {
       var cached = localStorage.getItem(todayKey);
       if (cached) {
@@ -209,25 +173,23 @@ export function renderHeader(el){
       }
     } catch (e) {}
 
-    // Load list -> pick N unseen -> cache day set -> update history
     return loadQuoteList().then(function(list){
       if (!list || !list.length) return [];
 
       var history = loadHistoryMap();
       pruneHistory(history);
 
-      var picked = pickUnseenQuotesForDay(list, history, QUOTE_CFG.QUOTES_PER_DAY);
+      var picked = pickUnseenQuotesForDay(list, history, QUOTE_CFG.quotesPerDay);
 
-      // Save today's set
+      // cache today's set
       try {
         localStorage.setItem(todayKey, JSON.stringify({ items: picked, savedAt: Date.now() }));
         cleanupOldDaySets(7);
       } catch (e) {}
 
-      // Update history with hashed IDs only
+      // update history (hashed IDs only)
       for (var i = 0; i < picked.length; i++){
-        var hid = hashQuoteId(picked[i].text, picked[i].author);
-        history[hid] = Date.now();
+        history[hashQuoteId(picked[i].text, picked[i].author)] = Date.now();
       }
       saveHistoryMap(history);
 
@@ -237,14 +199,14 @@ export function renderHeader(el){
 
   function loadQuoteList(){
     var listKey = "menzelijaz.quoteList.v1";
-    var cacheKey = "menzelijaz.quoteList.meta.v1";
+    var metaKey = "menzelijaz.quoteList.meta.v1";
 
-    // Check cache validity
+    // cache validity
     try {
-      var meta = JSON.parse(localStorage.getItem(cacheKey) || "{}");
+      var meta = JSON.parse(localStorage.getItem(metaKey) || "{}");
       if (meta && meta.savedAt) {
         var age = Date.now() - meta.savedAt;
-        var maxAge = QUOTE_CFG.LIST_CACHE_DAYS * QUOTE_CFG.DAY_MS;
+        var maxAge = QUOTE_CFG.listCacheDays * QUOTE_CFG.dayMs;
         if (age < maxAge) {
           var cachedList = JSON.parse(localStorage.getItem(listKey) || "[]");
           if (cachedList && cachedList.length) return Promise.resolve(cachedList);
@@ -252,8 +214,7 @@ export function renderHeader(el){
       }
     } catch (e) {}
 
-    // Fetch fresh list
-    return fetch(QUOTE_CFG.SOURCE_URL, { cache: "no-store" })
+    return fetch(QUOTE_CFG.sourceUrl, { cache: "no-store" })
       .then(function(r){ return r.json(); })
       .then(function(arr){
         var cleaned = [];
@@ -261,26 +222,18 @@ export function renderHeader(el){
           var q = arr[i] || {};
           var t = String(q.text || "").trim();
           if (!t) continue;
-
-          cleaned.push({
-            text: t,
-            author: String(q.author || "").trim()
-          });
+          cleaned.push({ text: t, author: String(q.author || "").trim() });
         }
 
-        // Save to cache
         try {
           localStorage.setItem(listKey, JSON.stringify(cleaned));
-          localStorage.setItem(cacheKey, JSON.stringify({ savedAt: Date.now() }));
+          localStorage.setItem(metaKey, JSON.stringify({ savedAt: Date.now() }));
         } catch (e) {}
 
         return cleaned;
       });
   }
 
-  /* ======================
-     Picking + history (hashed IDs only)
-     ====================== */
   function loadHistoryMap(){
     var histKey = "menzelijaz.quoteHistory.v3";
     try {
@@ -299,7 +252,7 @@ export function renderHeader(el){
   }
 
   function pruneHistory(map){
-    var cutoff = Date.now() - (QUOTE_CFG.HISTORY_DAYS * QUOTE_CFG.DAY_MS);
+    var cutoff = Date.now() - (QUOTE_CFG.historyDays * QUOTE_CFG.dayMs);
     var keys = Object.keys(map || {});
     for (var i = 0; i < keys.length; i++){
       if (map[keys[i]] < cutoff) delete map[keys[i]];
@@ -307,13 +260,12 @@ export function renderHeader(el){
   }
 
   function pickUnseenQuotesForDay(list, history, n){
-    // Deterministic PRNG based on dayId so it's stable within the day
     var seed = (dayIdNow() >>> 0) + 12345;
     var picked = [];
     var pickedIds = {};
-
     var attempts = 0;
-    while (picked.length < n && attempts < QUOTE_CFG.MAX_PICK_ATTEMPTS) {
+
+    while (picked.length < n && attempts < (QUOTE_CFG.maxPickAttempts || 5000)) {
       attempts++;
 
       // xorshift32
@@ -323,7 +275,6 @@ export function renderHeader(el){
 
       var idx = seed % list.length;
       var q = list[idx];
-
       if (!q || !q.text) continue;
 
       var hid = hashQuoteId(q.text, q.author);
@@ -335,8 +286,7 @@ export function renderHeader(el){
       picked.push({ text: q.text, author: q.author });
     }
 
-    // If we couldn't find enough unseen quotes, fill remaining from list anyway
-    // (still deterministic-ish) — better than falling back
+    // If we couldn't find enough unseen quotes, fill remaining deterministically from list
     if (picked.length < n) {
       for (var i = 0; i < list.length && picked.length < n; i++){
         var q2 = list[i];
@@ -358,7 +308,7 @@ export function renderHeader(el){
       var k = localStorage.key(i);
       if (k && k.indexOf(prefix) === 0) keys.push(k);
     }
-    var cutoff = Date.now() - (keepDays * QUOTE_CFG.DAY_MS);
+    var cutoff = Date.now() - (keepDays * QUOTE_CFG.dayMs);
     for (var j = 0; j < keys.length; j++){
       try {
         var v = JSON.parse(localStorage.getItem(keys[j]) || "{}");
@@ -379,11 +329,10 @@ export function renderHeader(el){
   }
 
   function dayIdNow(){
-    return Math.floor(Date.now() / QUOTE_CFG.DAY_MS);
+    return Math.floor(Date.now() / QUOTE_CFG.dayMs);
   }
 
   function fallbackDailyQuotes(n){
-    // Used only if type.fit fetch fails completely
     var fallback = [
       { text: "Progress, not perfection.", author: "" },
       { text: "Small steps, done consistently, become big change.", author: "James Clear" },
@@ -406,9 +355,7 @@ export function renderHeader(el){
     return out;
   }
 
-  /* ======================
-     Clock
-     ====================== */
+  // ----- Clock -----
   function tick(){
     var now = new Date();
     time.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
@@ -422,4 +369,4 @@ export function renderHeader(el){
 
   tick();
   setInterval(tick, 1000 * 10);
-}
+        }
