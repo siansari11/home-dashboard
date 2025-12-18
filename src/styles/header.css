@@ -8,18 +8,18 @@
      ========================= */
 
   /* Title */
-  --hdr-title-size: 25px;
+  --hdr-title-size: 50px;
   --hdr-title-weight: 90%;
-  --hdr-title-line-height: 2.35
-  --hdr-title-letter-spacing: 0.09em;
-  --hdr-title-word-spacing: 0.35em;
+  --hdr-title-line-height: 4.35
+  --hdr-title-letter-spacing: 0.20em;
+  --hdr-title-word-spacing: 0.6em;
   --hdr-title-margin-bottom: 17px;
 
   /* Quote */
-  --hdr-quote-size: 12px;
+  --hdr-quote-size: 10px;
   --hdr-quote-author-size: 8px;
   --hdr-quote-line-height: 1.0;
-  --hdr-quote-max-width: 68%;
+  --hdr-quote-max-width: 58%;
   --hdr-quote-margin-bottom: 10px;
 
   /* Quote animation feel */
@@ -53,7 +53,7 @@
 
   /* Shadows */
   --hdr-title-shadow: 0 4px 12px rgba(0,0,0,0.18);
-  --hdr-quote-shadow: 0 2px 5px rgba(0,0,0,0.12);
+  --hdr-quote-shadow: 0 2px 4px rgba(0,0,0,0.12);
 }
 
 /* ======================
