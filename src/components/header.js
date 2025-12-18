@@ -53,4 +53,61 @@ export function renderHeader(el){
   time.style.color = "rgba(15,23,42,0.85)";
 
   const date = document.createElement("div");
-  date.style.color = "rgba(15,23,
+  date.style.color = "rgba(15,23,42,0.55)";
+  date.style.marginTop = "4px";
+  date.style.fontSize = "14px";
+
+  wrap.append(brand, quoteWrap, time, date);
+  el.append(wrap);
+
+  /* ======================
+     Quotes source
+     ====================== */
+  const QUOTES = [
+    { text: "Small steps, done consistently, become big change.", author: "James Clear" },
+    { text: "Make it easy. Make it gentle. Make it daily.", author: "" },
+    { text: "Focus on the next right thing.", author: "" },
+    { text: "Progress, not perfection.", author: "" },
+    { text: "Create a home that supports who you are becoming.", author: "" },
+    { text: "One task. One breath. One moment at a time.", author: "" },
+    { text: "Simplicity is the ultimate sophistication.", author: "Leonardo da Vinci" },
+    { text: "What you do every day matters more than what you do once in a while.", author: "Gretchen Rubin" }
+  ];
+
+  function pickQuote() {
+    const now = new Date();
+    const hourBlock = Math.floor(now.getHours() / 6); // 4 times/day
+    const day = Math.floor(now.getTime() / (24 * 60 * 60 * 1000));
+    const idx = (day + hourBlock) % QUOTES.length;
+    return QUOTES[idx];
+  }
+
+  function setQuoteAnimated() {
+    const q = pickQuote();
+    quoteText.classList.remove("quoteAnimate");
+    void quoteText.offsetWidth; // force reflow
+    quoteText.textContent = `“${q.text}”`;
+    quoteAuthor.textContent = q.author ? `— ${q.author}` : "";
+    quoteText.classList.add("quoteAnimate");
+  }
+
+  /* ======================
+     Clock
+     ====================== */
+  const tick = () => {
+    const now = new Date();
+    time.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    date.textContent = now.toLocaleDateString([], {
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric"
+    });
+  };
+
+  tick();
+  setQuoteAnimated();
+
+  setInterval(tick, 1000 * 10);
+  setInterval(setQuoteAnimated, 1000 * 60 * 15); // safe refresh
+}
