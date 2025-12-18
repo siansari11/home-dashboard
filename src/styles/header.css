@@ -9,8 +9,8 @@
 
   /* Title */
   --hdr-title-size: 50px;
-  --hdr-title-weight: 90%;
-  --hdr-title-line-height: 4.35
+  --hdr-title-weight: 900;
+  --hdr-title-line-height: 1.5;
   --hdr-title-letter-spacing: 0.20em;
   --hdr-title-word-spacing: 0.6em;
   --hdr-title-margin-bottom: 17px;
@@ -18,7 +18,7 @@
   /* Quote */
   --hdr-quote-size: 10px;
   --hdr-quote-author-size: 8px;
-  --hdr-quote-line-height: 1.0;
+  --hdr-quote-line-height: 0.8;
   --hdr-quote-max-width: 58%;
   --hdr-quote-margin-bottom: 10px;
 
@@ -93,7 +93,7 @@
    QUOTE — SECONDARY
    ====================== */
 .quoteBlock{
-  /* max-width: var(--hdr-quote-max-width); */
+  max-width: var(--hdr-quote-max-width); 
   padding: 0;
   margin-bottom: var(--hdr-quote-margin-bottom);
 }
