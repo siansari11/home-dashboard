@@ -15,12 +15,15 @@ body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
-  background: var(--bg);
 
-  /* Background image (add later to /public/bg.jpg) */
   background-image:
-    linear-gradient(180deg, rgba(244,246,251,0.72), rgba(244,246,251,0.88)),
+    linear-gradient(
+      180deg,
+      rgba(20,25,40,0.35),
+      rgba(244,246,251,0.85)
+    ),
     url("/home-dashboard/bg.jpg");
+
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
