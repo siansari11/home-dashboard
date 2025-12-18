@@ -1,82 +1,38 @@
 // src/components/header.js
+import "../styles/header.css";
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 
 export function renderHeader(el){
   var QUOTE_CFG = DASHBOARD_CONFIG.quotes;
 
-  el.style.display = "flex";
-  el.style.justifyContent = "center";
-  el.style.alignItems = "center";
-  el.style.padding = "14px 4px 18px 4px";
-  el.style.textAlign = "center";
+  el.className = "dashboardHeader";
 
   var wrap = document.createElement("div");
+  wrap.className = "dashboardHeader__wrap";
 
-  // Household heading
+  // Title
   var brand = document.createElement("div");
+  brand.className = "dashboardHeader__brand";
   brand.textContent = "The Menzel-Ijaz Household";
-  brand.style.fontFamily = "'Great Vibes', cursive";
-  brand.style.fontSize = "44px";
-  brand.style.lineHeight = "1.1";
-  brand.style.marginBottom = "6px";
-  brand.style.color = "rgba(255,255,255,0.92)";
-  brand.style.textShadow = "0 6px 20px rgba(0,0,0,0.25)";
 
-  // ✅ Make title feel bigger by word spacing (no other redesign)
-  brand.style.wordSpacing = "0.22em";
-
-  // Quote block
+  // Quote
   var quoteWrap = document.createElement("div");
   quoteWrap.className = "quoteBlock";
-  quoteWrap.style.maxWidth = "780px";
-  quoteWrap.style.marginLeft = "auto";
-  quoteWrap.style.marginRight = "auto";
-
-  // ✅ Add more space before the time (keeps everything else the same)
-  quoteWrap.style.marginBottom = "22px";
 
   var quoteText = document.createElement("div");
   quoteText.className = "quoteLine";
-  quoteText.style.fontFamily = "'Great Vibes', cursive";
-  quoteText.style.fontSize = "26px";
-  quoteText.style.fontStyle = "italic";
-  quoteText.style.color = "rgba(255,255,255,0.82)";
-  quoteText.style.lineHeight = "1.25";
-  quoteText.style.textShadow = "0 4px 14px rgba(0,0,0,0.25)";
-  quoteText.style.whiteSpace = "pre-wrap";
 
   var quoteAuthor = document.createElement("div");
   quoteAuthor.className = "quoteAuthor";
-  quoteAuthor.style.fontSize = "12px";
-  quoteAuthor.style.marginTop = "4px";
-  quoteAuthor.style.color = "rgba(255,255,255,0.55)";
-  quoteAuthor.style.textAlign = "right";
 
   quoteWrap.append(quoteText, quoteAuthor);
 
-  // Time (smaller, same color as title + light glass border)
+  // Time & date
   var time = document.createElement("div");
-  time.style.display = "inline-block";
-  time.style.fontSize = "22px";
-  time.style.fontWeight = "700";
-  time.style.letterSpacing = "0.02em";
-  time.style.color = "rgba(255,255,255,0.92)";
+  time.className = "dashboardClock__time";
 
-  time.style.padding = "6px 12px";
-  time.style.borderRadius = "14px";
-  time.style.background = "rgba(255,255,255,0.10)";
-  time.style.border = "1px solid rgba(255,255,255,0.14)";
-  time.style.backdropFilter = "blur(8px)";
-  time.style.webkitBackdropFilter = "blur(8px)";
-  time.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)";
-
-  // Date (same color as title)
   var date = document.createElement("div");
-  date.style.color = "rgba(255,255,255,0.92)";
-  date.style.marginTop = "6px";
-  date.style.fontSize = "12px";
-  date.style.textShadow = "0 4px 12px rgba(0,0,0,0.18)";
-  date.style.opacity = "0.82";
+  date.className = "dashboardClock__date";
 
   wrap.append(brand, quoteWrap, time, date);
   el.append(wrap);
@@ -97,6 +53,7 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
+      // allowed: this is behavior, not styling (timing)
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -136,8 +93,8 @@ export function renderHeader(el){
     }, 1800);
   }
 
+  // ---- Test-day aware "day" ----
   var lastDayId = dayIdNow();
-
   initDailyQuotes();
 
   function initDailyQuotes(){
@@ -176,6 +133,9 @@ export function renderHeader(el){
     }
   }
 
+  /* ======================
+     Quote source: type.fit list (cached)
+     ====================== */
   function buildTodaysQuotes(){
     var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
 
@@ -275,8 +235,9 @@ export function renderHeader(el){
     var picked = [];
     var pickedIds = {};
     var attempts = 0;
+    var maxAttempts = QUOTE_CFG.maxPickAttempts || 5000;
 
-    while (picked.length < n && attempts < (QUOTE_CFG.maxPickAttempts || 5000)) {
+    while (picked.length < n && attempts < maxAttempts) {
       attempts++;
 
       seed ^= (seed << 13) >>> 0;
@@ -363,6 +324,7 @@ export function renderHeader(el){
     return out;
   }
 
+  // ----- Clock -----
   function tick(){
     var now = new Date();
     time.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
