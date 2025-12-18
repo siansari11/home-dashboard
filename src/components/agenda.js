@@ -225,51 +225,43 @@ function isRoutineByBehavior(e){
   return (counts[key] || 0) >= 2;
 }
 
-function buildDailySummaryLine(list){
+ function buildDailySummaryLine(list){
   if (!list || !list.length) return "";
 
-  // Build unique order of titles as they appear (stable)
+  // Sort by time so routine pills are in a nice order
+  list.sort(function(a,b){
+    var ta = (a.start && a.start.getTime) ? a.start.getTime() : 0;
+    var tb = (b.start && b.start.getTime) ? b.start.getTime() : 0;
+    return ta - tb;
+  });
+
+  // Deduplicate by TITLE for this day only (keep the first occurrence/time for that day)
   var seen = {};
-  var order = [];
+  var pills = "";
 
   for (var i = 0; i < list.length; i++){
-    var key = routineTitleKey(list[i]);
+    var e = list[i];
+    var key = routineTitleKey(e);
     if (!key) continue;
-    if (!seen[key]) { seen[key] = true; order.push(key); }
-  }
 
-  var pills = "";
-  for (var j = 0; j < order.length; j++){
-    var key2 = order[j];
+    if (seen[key]) continue;
+    seen[key] = true;
 
-    // display title = first matching event’s original summary
-    var displayTitle = "";
-    for (var k = 0; k < list.length; k++){
-      if (routineTitleKey(list[k]) === key2) { displayTitle = list[k].summary || ""; break; }
-    }
-    if (!displayTitle) displayTitle = key2;
-
-    // show time variants (weekend/weekday)
-    var tset = (window.__ROUTINE_TIMES && window.__ROUTINE_TIMES[key2]) ? window.__ROUTINE_TIMES[key2] : {};
-    var tlist = Object.keys(tset || {});
-    tlist.sort(function(a,b){
-      if (a === "All day") return 1;
-      if (b === "All day") return -1;
-      return a.localeCompare(b);
-    });
-
-    var timeText = tlist.length ? " (" + tlist.join(", ") + ")" : "";
+    var t = formatTime(e);
+    var title = e.summary || "Routine";
 
     pills +=
       '<span style="display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px;' +
                    'border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.60);' +
                    'font-size:12px; font-weight:900; color:rgba(15,23,42,0.72)">' +
-        escapeHtml(displayTitle + timeText) +
+        escapeHtml("(" + t + " " + title + ")") +
       "</span>";
   }
 
   return '<div style="display:flex; flex-wrap:wrap; align-items:center;">' + pills + "</div>";
-}
+ }
+
+
 
 /* ---------- Details registry ---------- */
 
