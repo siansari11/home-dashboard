@@ -254,7 +254,7 @@ function isRoutineByBehavior(e){
       '<span style="display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px;' +
                    'border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.60);' +
                    'font-size:12px; font-weight:900; color:rgba(15,23,42,0.72)">' +
-        escapeHtml("(" + t + " " + title + ")") +
+        escapeHtml( title + " at " + t ) +
       "</span>";
   }
 
