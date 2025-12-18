@@ -1,5 +1,5 @@
 export const CONFIG = {
-  location: { name: "Berlin", lat: 52.52, lon: 13.405 },
+  location: { name: "Seddiner See", lat: 52.2891284, lon: 12.9924364  },
 
   rssFeeds: [
     { name: "Skinnytaste", url: "https://www.skinnytaste.com/feed/" },
