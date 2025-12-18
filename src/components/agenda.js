@@ -84,13 +84,17 @@ export async function renderAgenda(el){
               const idx = g._startIndex + ei;
               return `
                 <div style="
-                  display:grid;
-                  grid-template-columns: 86px 1fr auto;
-                  gap:10px;
-                  padding:10px 12px;
-                  align-items:center;
-                  border-top: ${ei === 0 ? "none" : "1px solid rgba(15,23,42,0.08)"};
-                ">
+                   display:grid;
+                   grid-template-columns: 86px 1fr auto;
+                   gap:10px;
+                   padding:10px 12px;
+                   align-items:center;
+                   border-top: ${ei === 0 ? "none" : "1px solid rgba(15,23,42,0.08)"};
+
+                   /* color tweak: one-off events slightly different */
+                   background: ${!e._occ ? "rgba(37,99,235,0.08)" : "transparent"};
+                   ">
+  
                   <div style="
                     font-weight:900;
                     color:rgba(15,23,42,0.70);
