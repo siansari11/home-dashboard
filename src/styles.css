@@ -73,6 +73,11 @@ h2{
   letter-spacing: .10em;
   text-transform: uppercase;
 }
+@media (min-width: 900px){
+  header div div:first-child{
+    font-size: 52px; /* household name bigger on tablets */
+  }
+}
 
 a{ color: inherit; text-decoration:none; }
 
