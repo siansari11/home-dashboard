@@ -151,7 +151,7 @@ export async function loadUpcomingEvents() {
 
 const now = new Date();
 const startWindow = addHours(now, -6);
-const endWindow = new Date(now.getTime() + 5 * 24 * 60 * 60 * 1000);
+const endWindow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
 
 const expanded = [];
 
@@ -177,8 +177,8 @@ for (const e of base) {
 
   if (freq === "DAILY") {
     // Find first occurrence on/after startWindow by stepping days
-    // We do a safe loop limited to 6*24h window size (no runaway).
-    for (let d = 0; d < 10; d++) {
+    // We do a safe loop limited to 4*24h window size (no runaway).
+    for (let d = 0; d < 6; d++) {
       const occStart = addDays(new Date(e.start.getTime()), d * interval);
 
       if (until && occStart > until) break;
@@ -201,9 +201,9 @@ for (const e of base) {
     // - If BYDAY exists, place occurrences on those weekdays within window
     // - Otherwise repeat on same weekday as DTSTART
     const byday = rule.BYDAY ? rule.BYDAY.split(",") : null;
-    const dayMap = { SU:0, MO:1, TU:2, WE:3, TH:4, FR:5, SA:6 };
+    const dayMap = { MO:0, TU:1, WE:2, TH:3, FR:4, SA:5, SU:6 };
 
-    for (let d = 0; d < 10; d++) {
+    for (let d = 0; d < 6; d++) {
       const day = addDays(new Date(startWindow.getTime()), d);
       const weekday = day.getDay();
 
