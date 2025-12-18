@@ -23,12 +23,6 @@ export async function renderAgenda(el){
   });
 
   var body = el.querySelector("#calBody");
-  var result = await loadUpcomingEvents();
-  var events = result.events || [];
-  var debug = result.debug || "";
-
-  // Apply: only Today + next 3 days, but keep earlier events from TODAY (crossed out)
-  events = filterToFourDaysWithTodayHistory(events);
 
   if (!getIcsUrl()){
     body.innerHTML =
@@ -40,6 +34,23 @@ export async function renderAgenda(el){
       "</div>";
     return;
   }
+
+  var result;
+  try {
+    result = await loadUpcomingEvents();
+  } catch (err) {
+    body.innerHTML =
+      '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
+        '<div style="font-weight:900; color:rgba(15,23,42,0.75)">Calendar crashed</div>' +
+        '<div style="margin-top:8px; font-size:12px; color:var(--muted); white-space:pre-wrap;">' +
+          escapeHtml(String(err && (err.stack || err))) +
+        "</div>" +
+      "</div>";
+    return;
+  }
+
+  var events = (result && result.events) ? result.events : [];
+  var debug = (result && result.debug) ? result.debug : "";
 
   if (!events.length){
     body.innerHTML =
@@ -53,7 +64,6 @@ export async function renderAgenda(el){
   // Group by day
   var groups = groupByDay(events);
 
-  // Render grouped layout
   var html = '<div style="display:flex; flex-direction:column; gap:12px">';
 
   for (var gi = 0; gi < groups.length; gi++) {
@@ -76,7 +86,6 @@ export async function renderAgenda(el){
       var isToday = (e.start instanceof Date) && isSameDay(e.start, new Date());
       var faded = isPast && isToday;
 
-      // background: one-off tint OR transparent; past-today gets muted
       var bg = "transparent";
       if (faded) bg = "rgba(15,23,42,0.04)";
       else if (!e._occ) bg = "rgba(37,99,235,0.08)";
@@ -118,7 +127,6 @@ export async function renderAgenda(el){
   html += "</div>";
   body.innerHTML = html;
 
-  // Wire details buttons
   var btns = body.querySelectorAll("[data-details]");
   for (var b = 0; b < btns.length; b++) {
     btns[b].addEventListener("click", function (ev) {
@@ -135,31 +143,6 @@ export async function renderAgenda(el){
       );
     });
   }
-}
-
-/* -------- Helpers -------- */
-
-function filterToFourDaysWithTodayHistory(events){
-  // Only include: today (all events incl. past) + next 3 days (future only)
-  var now = new Date();
-  var startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
-  var endWindow = new Date(startToday.getTime() + 4 * 24 * 60 * 60 * 1000); // start of day 5
-
-  var out = [];
-  for (var i = 0; i < events.length; i++){
-    var e = events[i];
-    if (!(e.start instanceof Date) || isNaN(e.start)) continue;
-
-    // keep only within [today 00:00, day4 end)
-    if (e.start >= startToday && e.start < endWindow) out.push(e);
-  }
-
-  // sort by start time
-  out.sort(function(a,b){
-    return (a.start.getTime() || 0) - (b.start.getTime() || 0);
-  });
-
-  return out;
 }
 
 function groupByDay(events){
@@ -181,7 +164,6 @@ function groupByDay(events){
     map[key].items.push(e);
   }
 
-  // map back to original events array order (we use indices for Details)
   var running = 0;
   for (var g = 0; g < groups.length; g++){
     groups[g]._startIndex = running;
