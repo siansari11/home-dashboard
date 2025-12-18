@@ -1,7 +1,22 @@
 import { loadRssItems } from '../lib/rss.js';
 
-export async function renderFeed(el){
-  const items = await loadRssItems();
+export async function renderFeed(el) {
+  el.innerHTML = `<div style="color:var(--muted)">Loading feed…</div>`;
+
+  const { items, debug } = await loadRssItems();
+
+  if (!items.length) {
+    el.innerHTML = `
+      <div style="padding:12px; border:1px solid rgba(255,255,255,0.10); border-radius:14px; background:rgba(255,255,255,0.03)">
+        <div style="font-weight:800; margin-bottom:6px">No feed items loaded</div>
+        <div style="color:var(--muted); font-size:13px; white-space:pre-wrap">${escapeHtml(debug.join("\\n\\n"))}</div>
+        <div style="color:var(--muted); font-size:12px; margin-top:8px">
+          Pilot mode note: browsers need CORS proxies for RSS, and they can be flaky. 4
+        </div>
+      </div>
+    `;
+    return;
+  }
 
   el.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:10px; max-height:520px; overflow:auto; padding-right:4px">
@@ -19,9 +34,6 @@ export async function renderFeed(el){
           </div>
         </a>
       `).join("")}
-    </div>
-    <div style="color:var(--muted); font-size:12px; margin-top:8px">
-      Pilot mode: RSS uses a free CORS proxy. Pi later = stable + cached + QR per item.
     </div>
   `;
 }
