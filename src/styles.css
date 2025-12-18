@@ -1,23 +1,79 @@
 :root{
-  --bg:#0f1115; --panel:#151922; --text:#e8edf6;
-  --muted:#9aa7bd; --line:#232a3a; --accent:#78d6b6;
-  --radius:18px;
+  --bg: #f4f6fb;
+  --text: #0f172a;
+  --muted: #475569;
+  --line: rgba(15, 23, 42, 0.10);
+  --panel: rgba(255,255,255,0.55);
+  --panel-strong: rgba(255,255,255,0.72);
+  --accent: #2563eb;
+  --radius: 22px;
 }
-*{box-sizing:border-box}
+
+*{ box-sizing:border-box; }
+html, body { height:100%; }
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
-  background: linear-gradient(180deg, #0b0d12 0%, var(--bg) 100%);
   color: var(--text);
+  background: var(--bg);
+
+  /* Background image (add later to /public/bg.jpg) */
+  background-image:
+    linear-gradient(180deg, rgba(244,246,251,0.72), rgba(244,246,251,0.88)),
+    url("/home-dashboard/bg.jpg");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 }
-.wrap{padding:18px; max-width:1200px; margin:0 auto;}
-.grid{display:grid; grid-template-columns:1.05fr 1.35fr; gap:14px;}
-@media (max-width: 860px){ .grid{grid-template-columns:1fr} }
+
+.wrap{ padding:18px; max-width:1280px; margin:0 auto; }
+
+header{
+  display:flex; justify-content:space-between; align-items:flex-end;
+  padding: 8px 4px 14px 4px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns: 0.95fr 1.05fr 1.2fr; /* landscape */
+  gap:14px;
+  align-items:start;
+}
+
+@media (max-width: 980px){
+  .grid{ grid-template-columns:1fr; }
+}
+
 .card{
-  background: linear-gradient(180deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02));
-  border:1px solid var(--line);
-  border-radius:var(--radius);
-  padding:14px;
-  box-shadow:0 8px 24px rgba(0,0,0,0.25);
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
-h2{margin:0 0 10px 0; font-size:14px; color:var(--muted); font-weight:700; letter-spacing:.08em; text-transform:uppercase;}
+
+.card.strong{ background: var(--panel-strong); }
+
+h2{
+  margin:0 0 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+a{ color: inherit; text-decoration:none; }
+
+.pill{
+  display:inline-flex; align-items:center; gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,0.55);
+  color: var(--muted);
+  font-size: 13px;
+  white-space:nowrap;
+}
