@@ -3,6 +3,7 @@ import { renderHeader } from './components/header.js';
 import { renderWeather } from './lib/weather.js';
 import { renderFeed } from './components/feed.js';
 import { renderAgenda } from './components/agenda.js';
+import { renderTasks } from "./components/tasks.js";
 
 document.querySelector('#app').innerHTML = `
   <div class="wrap">
@@ -41,4 +42,5 @@ document.querySelector('#app').innerHTML = `
 renderHeader(document.querySelector('#header'));
 renderWeather(document.querySelector('#weather'));
 renderAgenda(document.querySelector('#agenda'));
+renderTasks(document.querySelector("#tasks"));
 renderFeed(document.querySelector('#feed'));
