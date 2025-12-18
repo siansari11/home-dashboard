@@ -15,7 +15,7 @@ export const FEED_GROUPS = [
     key: "apartment",
     title: "Small Apartment & Decluttering",
     urls: [
-      "https://www.thespruce.com/rss",
+      "https://rss.app/feeds/zX1l7Of5jKIdte7t.xml",
     ],
   },
 ];
