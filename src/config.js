@@ -4,6 +4,7 @@ export const CONFIG = {
   rssFeeds: [
     { name: "Skinnytaste", url: "https://www.skinnytaste.com/feed/" },
     { name: "The Kitchn", url: "https://www.thekitchn.com/main.rss" },
+    { name: "The Spruce", url: "https://www.thespruce.com/rss" },
     { name: "Apartment Therapy", url: "https://www.apartmenttherapy.com/main.rss" },
     { name: "A Slob Comes Clean", url: "https://www.aslobcomesclean.com/feed/" }
   ],
