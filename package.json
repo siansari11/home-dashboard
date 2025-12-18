@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "check:inline-styles": "grep -RIn --exclude-dir=node_modules --exclude=*.css --exclude=*.svg \"\\.style\\.\" src && exit 1 || exit 0",
     "dev": "vite",
     "build": "vite build"
   },
