@@ -8,16 +8,16 @@
      ========================= */
 
   /* Title */
-  --hdr-title-size: 66px;
+  --hdr-title-size: 70px;
   --hdr-title-weight: 700;
   --hdr-title-letter-spacing: 0.05em;
-  --hdr-title-word-spacing: 0.12em;
-  --hdr-title-margin-bottom: 20px;
+  --hdr-title-word-spacing: 0.15em;
+  --hdr-title-margin-bottom: 17px;
 
   /* Quote */
   --hdr-quote-size: 12px;
   --hdr-quote-author-size: 8px;
-  --hdr-quote-line-height: 1.35;
+  --hdr-quote-line-height: 1.0;
   --hdr-quote-max-width: 720px;
   --hdr-quote-margin-bottom: 14px;
 
@@ -80,7 +80,7 @@
   font-family: "Great Vibes", cursive;
   font-size: var(--hdr-title-size);
   font-weight: var(--hdr-title-weight);
-  line-height: 1.05;
+  line-height: 2.05;
   letter-spacing: var(--hdr-title-letter-spacing);
   word-spacing: var(--hdr-title-word-spacing);
   color: var(--hdr-title-color);
