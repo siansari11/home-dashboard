@@ -73,30 +73,39 @@ export function renderHeader(el){
   let qIndex = 0;
 
   function renderQuoteWords(text){
-    // Clear and rebuild spans so each word can animate in sequence
-    quoteText.innerHTML = "";
+  quoteText.innerHTML = "";
+  quoteText.style.whiteSpace = "pre-wrap"; // preserve spaces reliably
 
-    // Add opening quote mark
-    const open = document.createElement("span");
-    open.textContent = "“";
-    open.className = "quotePunct";
-    quoteText.appendChild(open);
+  // Opening quote mark
+  const open = document.createElement("span");
+  open.textContent = "“";
+  open.className = "quotePunct";
+  quoteText.appendChild(open);
 
-    const words = String(text).trim().split(/\s+/);
-    for (let i = 0; i < words.length; i++){
-      const span = document.createElement("span");
-      span.className = "quoteWord";
-      span.textContent = words[i] + (i === words.length - 1 ? "" : " ");
-      span.style.animationDelay = (i * 110) + "ms"; // one-by-one speed
-      quoteText.appendChild(span);
+  const words = String(text).trim().split(/\s+/);
+
+  for (let i = 0; i < words.length; i++){
+    // leading space before every word except the first (after opening quote)
+    if (i === 0) {
+      quoteText.appendChild(document.createTextNode(" "));
+    } else {
+      quoteText.appendChild(document.createTextNode(" "));
     }
 
-    // Closing quote mark
-    const close = document.createElement("span");
-    close.textContent = "”";
-    close.className = "quotePunct";
-    close.style.marginLeft = "2px";
-    quoteText.appendChild(close);
+    const span = document.createElement("span");
+    span.className = "quoteWord";
+    span.textContent = words[i];
+    // slow, breathing pacing
+    span.style.animationDelay = (i * 260) + "ms";
+    quoteText.appendChild(span);
+  }
+
+  // space + closing quote mark
+  quoteText.appendChild(document.createTextNode(" "));
+  const close = document.createElement("span");
+  close.textContent = "”";
+  close.className = "quotePunct";
+  quoteText.appendChild(close);
   }
 
   function setQuote(index){
