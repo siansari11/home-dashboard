@@ -184,11 +184,31 @@ export async function renderAgenda(el){
 /* ---------- Daily summary logic ---------- */
 
 function isDailyRecurringOccurrence(e){
-  // Our recurring instances have _occ: true and carry the master RRULE string
-  // DAILY recurring => RRULE contains FREQ=DAILY
   if (!e || !e._occ) return false;
   if (!e.rrule) return false;
-  return String(e.rrule).toUpperCase().indexOf("FREQ=DAILY") >= 0;
+
+  var r = String(e.rrule).toUpperCase();
+
+  // true daily
+  if (r.indexOf("FREQ=DAILY") >= 0) return true;
+
+  // sometimes "daily" is encoded as WEEKLY on all 7 days
+  // e.g. FREQ=WEEKLY;BYDAY=MO,TU,WE,TH,FR,SA,SU
+  if (r.indexOf("FREQ=WEEKLY") >= 0 && r.indexOf("BYDAY=") >= 0) {
+    var m = r.match(/BYDAY=([^;]+)/);
+    if (m && m[1]) {
+      var days = m[1].split(",");
+      // normalize and check if all 7 weekday codes are present
+      var set = {};
+      for (var i = 0; i < days.length; i++) set[days[i].trim()] = true;
+
+      if (set.MO && set.TU && set.WE && set.TH && set.FR && set.SA && set.SU) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 function buildDailySummaryLine(list){
