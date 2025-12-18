@@ -1,184 +1,121 @@
-/* src/styles/header.css */
-/* ✅ All tweakable sizes live in ONE place (variables) */
+/* src/styles/header.css
+   Minimal settings you actually care about.
+   Change only the TOP block.
+*/
 
 :root{
-  /* =========================
-     QUICK TWEAK PANEL
-     Change ONLY these values
-     ========================= */
+  /* ===== EDIT ONLY THESE ===== */
+  --titleSize: 52px;
+  --quoteSize: 12px;
+  --timeSize: 14px;
+  --dateSize: 12px;
 
-  /* Title */
-  --hdr-title-size: 50px;
-  --hdr-title-weight: 900;
-  --hdr-title-line-height: 1.5;
-  --hdr-title-letter-spacing: 0.20em;
-  --hdr-title-word-spacing: 0.6em;
-  --hdr-title-margin-bottom: 17px;
+  --titleWidth: 90%;
+  --quoteWidth: 68%;
 
-  /* Quote */
-  --hdr-quote-size: 10px;
-  --hdr-quote-author-size: 8px;
-  --hdr-quote-line-height: 0.8;
-  --hdr-quote-max-width: 58%;
-  --hdr-quote-margin-bottom: 10px;
-
-  /* Quote animation feel */
-  --hdr-quote-word-anim-duration: 2.4s;
-  --hdr-quote-fade-in: 1.4s;
-  --hdr-quote-fade-out: 1.6s;
-
-  /* Clock (time/date) */
-  --hdr-time-size: 14px;  /* ✅ your request */
-  --hdr-date-size: 12px;  /* ✅ your request */
-  --hdr-clock-padding-y: 4px;
-  --hdr-clock-padding-x: 10px;
-  --hdr-clock-radius: 12px;
-
-  /* Layout */
-  --hdr-padding-top: 12px;
-  --hdr-padding-bottom: 8px;
-  --hdr-wrap-max-width: 90%;
-
-  /* Colors (subtle defaults) */
-  --hdr-title-color: rgba(255,255,255,0.96);
-  --hdr-quote-color: rgba(255,255,255,0.66);
-  --hdr-quote-author-color: rgba(255,255,255,0.48);
-  --hdr-time-color: rgba(255,255,255,0.78);
-  --hdr-date-color: rgba(255,255,255,0.70);
-
-  /* Glass card */
-  --hdr-glass-bg: rgba(255,255,255,0.10);
-  --hdr-glass-border: 1px solid rgba(255,255,255,0.14);
-  --hdr-glass-blur: 8px;
-
-  /* Shadows */
-  --hdr-title-shadow: 0 4px 12px rgba(0,0,0,0.18);
-  --hdr-quote-shadow: 0 2px 4px rgba(0,0,0,0.12);
+  --space: 14px;
 }
 
-/* ======================
-   Header layout
-   ====================== */
+/* layout */
 .dashboardHeader{
+  width: 100%;
   display: flex;
   justify-content: center;
-  align-items: center;
-  padding: var(--hdr-padding-top) 4px var(--hdr-padding-bottom);
+  padding: var(--space) 0;
   text-align: center;
 }
 
 .dashboardHeader__wrap{
+  width: 100%;
   display: flex;
   flex-direction: column;
   align-items: center;
-  max-width: var(--hdr-wrap-max-width);
 }
 
-/* ======================
-   TITLE — PRIMARY
-   ====================== */
+/* title */
 .dashboardHeader__brand{
+  width: var(--titleWidth);
+  margin: 0 0 calc(var(--space) * 1.1) 0;
+
   font-family: "Great Vibes", cursive;
-  font-size: var(--hdr-title-size);
-  font-weight: var(--hdr-title-weight);
-  line-height: var(--hdr-title-line-height);
-  letter-spacing: var(--hdr-title-letter-spacing);
-  word-spacing: var(--hdr-title-word-spacing);
-  color: var(--hdr-title-color);
-  text-shadow: var(--hdr-title-shadow);
-  margin: 0 0 var(--hdr-title-margin-bottom) 0;
+  font-size: var(--titleSize);
+  line-height: 1.05;
+
+  letter-spacing: 0.04em;
+  word-spacing: 0.18em;
+
+  color: rgba(255,255,255,0.96);
+  text-shadow: 0 6px 16px rgba(0,0,0,0.18);
 }
 
-/* ======================
-   QUOTE — SECONDARY
-   ====================== */
+/* quote */
 .quoteBlock{
-  max-width: var(--hdr-quote-max-width); 
+  width: var(--quoteWidth);
+  margin: 0 0 var(--space) 0;
   padding: 0;
-  margin-bottom: var(--hdr-quote-margin-bottom);
 }
 
+/* IMPORTANT: quote is NOT the same font as title -> it stops competing */
 .quoteLine{
-  font-family: "Great Vibes", cursive;
-  font-size: var(--hdr-quote-size);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: var(--quoteSize);
+  line-height: 1.35;
   font-style: italic;
-  line-height: var(--hdr-quote-line-height);
-  color: var(--hdr-quote-color);
-  text-shadow: var(--hdr-quote-shadow);
+
+  color: rgba(255,255,255,0.78);
+  text-shadow: 0 2px 6px rgba(0,0,0,0.12);
   white-space: pre-wrap;
 }
 
 .quoteAuthor{
-  margin-top: 2px;
-  font-size: var(--hdr-quote-author-size);
-  letter-spacing: 0.04em;
-  color: var(--hdr-quote-author-color);
+  margin-top: 4px;
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+  font-size: calc(var(--quoteSize) * 0.9);
+  color: rgba(255,255,255,0.60);
   text-align: right;
 }
 
-/* Word-by-word animation (JS sets animationDelay per word) */
+/* word animation (leave as is) */
 .quoteWord{
   display: inline-block;
   opacity: 0;
   transform: translateY(1px);
-  animation: quoteWordIn var(--hdr-quote-word-anim-duration) ease forwards;
+  animation: quoteWordIn 2.4s ease forwards;
 }
-
-.quotePunct{ opacity: 0.8; }
 
 .quoteIn{
   opacity: 1;
-  transform: translateY(0);
-  transition: opacity var(--hdr-quote-fade-in) ease, transform var(--hdr-quote-fade-in) ease;
+  transition: opacity 1.4s ease;
 }
 
 .quoteOut{
   opacity: 0;
-  transform: translateY(3px);
-  transition: opacity var(--hdr-quote-fade-out) ease, transform var(--hdr-quote-fade-out) ease;
+  transition: opacity 1.6s ease;
 }
 
 @keyframes quoteWordIn{
-  0%{
-    opacity: 0;
-    transform: translateY(1px);
-    filter: blur(0.4px);
-  }
-  100%{
-    opacity: 1;
-    transform: translateY(0);
-    filter: blur(0px);
-  }
+  from{ opacity: 0; transform: translateY(1px); }
+  to{ opacity: 1; transform: translateY(0); }
 }
 
-/* ======================
-   CLOCK — TERTIARY
-   ====================== */
+/* clock */
 .dashboardClock{
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0;
-  padding: var(--hdr-clock-padding-y) var(--hdr-clock-padding-x);
-  border-radius: var(--hdr-clock-radius);
-
-  background: var(--hdr-glass-bg);
-  border: var(--hdr-glass-border);
-
-  backdrop-filter: blur(var(--hdr-glass-blur));
-  -webkit-backdrop-filter: blur(var(--hdr-glass-blur));
+  padding: 4px 10px;
+  border-radius: 12px;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.14);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
 }
 
 .dashboardClock__time{
-  font-size: var(--hdr-time-size);
+  font-size: var(--timeSize);
   font-weight: 700;
-  letter-spacing: 0.03em;
-  color: var(--hdr-time-color);
+  color: rgba(255,255,255,0.82);
 }
 
 .dashboardClock__date{
-  font-size: var(--hdr-date-size);
+  font-size: var(--dateSize);
   font-weight: 600;
-  letter-spacing: 0.03em;
-  color: var(--hdr-date-color);
+  color: rgba(255,255,255,0.70);
 }
