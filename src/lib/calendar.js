@@ -150,8 +150,12 @@ export async function loadUpcomingEvents() {
   .sort((a, b) => eTime(a.start) - eTime(b.start));
 
 const now = new Date();
-const startWindow = addHours(now, -6);
-const endWindow = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000);
+
+// Start at today's 00:00 (so we can include past events from today)
+const startWindow = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+
+// End at start of (today + 4 days) => today + next 3 days
+const endWindow = new Date(startWindow.getTime() + 4 * 24 * 60 * 60 * 1000);
 
 const expanded = [];
 
