@@ -22,13 +22,18 @@ export function renderHeader(el){
   brand.style.color = "rgba(255,255,255,0.92)";
   brand.style.textShadow = "0 6px 20px rgba(0,0,0,0.25)";
 
+  // ✅ Make title feel bigger by word spacing (no other redesign)
+  brand.style.wordSpacing = "0.22em";
+
   // Quote block
   var quoteWrap = document.createElement("div");
   quoteWrap.className = "quoteBlock";
-  quoteWrap.style.marginBottom = "12px";
   quoteWrap.style.maxWidth = "780px";
   quoteWrap.style.marginLeft = "auto";
   quoteWrap.style.marginRight = "auto";
+
+  // ✅ Add more space before the time (keeps everything else the same)
+  quoteWrap.style.marginBottom = "22px";
 
   var quoteText = document.createElement("div");
   quoteText.className = "quoteLine";
@@ -49,15 +54,14 @@ export function renderHeader(el){
 
   quoteWrap.append(quoteText, quoteAuthor);
 
-  // Time & date (match title color + smaller time + light glass around time)
+  // Time (smaller, same color as title + light glass border)
   var time = document.createElement("div");
   time.style.display = "inline-block";
-  time.style.fontSize = "22px"; // reduced
+  time.style.fontSize = "22px";
   time.style.fontWeight = "700";
   time.style.letterSpacing = "0.02em";
   time.style.color = "rgba(255,255,255,0.92)";
 
-  // very light "glass" around time only
   time.style.padding = "6px 12px";
   time.style.borderRadius = "14px";
   time.style.background = "rgba(255,255,255,0.10)";
@@ -66,8 +70,9 @@ export function renderHeader(el){
   time.style.webkitBackdropFilter = "blur(8px)";
   time.style.boxShadow = "0 6px 18px rgba(0,0,0,0.12)";
 
+  // Date (same color as title)
   var date = document.createElement("div");
-  date.style.color = "rgba(255,255,255,0.92)"; // match title
+  date.style.color = "rgba(255,255,255,0.92)";
   date.style.marginTop = "6px";
   date.style.fontSize = "12px";
   date.style.textShadow = "0 4px 12px rgba(0,0,0,0.18)";
@@ -92,7 +97,6 @@ export function renderHeader(el){
       span.className = "quoteWord";
       span.textContent = words[i];
 
-      // slow “exhale” pacing
       span.style.animationDelay = (i * 260) + "ms";
       quoteText.appendChild(span);
     }
@@ -172,7 +176,6 @@ export function renderHeader(el){
     }
   }
 
-  // ----- type.fit list fetch + cache + no-repeat selection -----
   function buildTodaysQuotes(){
     var todayKey = "menzelijaz.quotes.dayset." + String(dayIdNow());
 
@@ -360,7 +363,6 @@ export function renderHeader(el){
     return out;
   }
 
-  // ----- Clock -----
   function tick(){
     var now = new Date();
     time.textContent = now.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
