@@ -9,7 +9,7 @@ document.querySelector('#app').innerHTML = `
     <header id="header"></header>
 
     <div class="grid">
-      <!-- Left poster column -->
+      <!-- LEFT: Weather + Events -->
       <section class="card strong">
         <h2>Weather</h2>
         <div id="weather">Loading…</div>
@@ -20,7 +20,7 @@ document.querySelector('#app').innerHTML = `
         <div id="agenda">Loading…</div>
       </section>
 
-      <!-- Middle: tasks -->
+      <!-- MIDDLE: Tasks -->
       <section class="card">
         <h2>Tasks</h2>
         <div id="tasks">(Next step — we’ll add proper tasks UI here)</div>
@@ -29,7 +29,7 @@ document.querySelector('#app').innerHTML = `
         </div>
       </section>
 
-      <!-- Right: feed -->
+      <!-- RIGHT: Feed -->
       <section class="card">
         <h2>Feed</h2>
         <div id="feed">Loading…</div>
