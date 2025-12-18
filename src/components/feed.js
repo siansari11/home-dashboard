@@ -1,127 +1,87 @@
-import { loadRssItems } from "../lib/rss.js";
+// src/components/feed.js
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
+import { loadFeedItems } from "../lib/rss.js";
 
-export async function renderFeed(el) {
-  el.innerHTML = '<div style="color:var(--muted)">Loading feed…</div>';
+export async function renderFeed(el){
+  el.innerHTML =
+    '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">' +
+      '<div class="pill">📰 Feed</div>' +
+      '<div id="feedStatus" style="font-size:12px; color:var(--muted);"></div>' +
+    "</div>" +
+    '<div id="feedBody" style="color:var(--muted)">Loading…</div>';
 
-  try {
-    var result = await loadRssItems();
-    var items = Array.isArray(result) ? result : (result.items || []);
+  var status = el.querySelector("#feedStatus");
+  var body = el.querySelector("#feedBody");
 
-    if (!items.length) {
-      el.innerHTML =
-        '<div style="padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,0.55)">' +
-        '<strong>No feed items</strong>' +
-        "</div>";
-      return;
-    }
+  async function refresh(){
+    status.textContent = "Updating…";
+    try {
+      var items = await loadFeedItems();
 
-    var html = '<div style="display:flex;flex-direction:column;gap:10px;max-height:520px;overflow:auto;padding-right:4px">';
+      if (!items.length) {
+        body.innerHTML =
+          '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
+            '<div style="font-weight:900; color:rgba(15,23,42,0.75)">No feed items found</div>' +
+            '<div style="margin-top:6px; font-size:13px;">Try adding/changing feed URLs in <code>src/config/feeds.js</code>.</div>' +
+          "</div>";
+        status.textContent = "";
+        return;
+      }
 
-    for (var i = 0; i < items.length; i++) {
-      var it = items[i];
-      var title = escapeHtml(it.title || "Untitled");
-      var link = escapeAttr(it.link || "");
-      var source = escapeHtml(it.source || "");
-      var img = it.image
-        ? '<img src="' + escapeAttr(it.image) + '" style="width:100%;height:100%;object-fit:cover" />'
-        : '<div style="font-size:12px;color:var(--muted)">No image</div>';
+      var html = '<div style="display:flex; flex-direction:column; gap:10px;">';
 
-      html +=
-        '<div style="display:grid;grid-template-columns:96px 1fr auto;gap:12px;padding:10px;border-radius:16px;background:rgba(255,255,255,0.55);border:1px solid var(--line);align-items:center">' +
-          '<div style="width:96px;height:64px;border-radius:12px;overflow:hidden;background:rgba(15,23,42,0.06);display:flex;align-items:center;justify-content:center">' +
-            img +
-          "</div>" +
-          '<div style="min-width:0">' +
-            '<a href="' + link + '" target="_blank" rel="noopener" style="display:block;font-weight:900;font-size:14px;line-height:1.25;color:rgba(15,23,42,0.85);text-decoration:none;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-              title +
-            "</a>" +
-            '<div style="color:var(--muted);font-size:12px;margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' +
-              source +
+      for (var i = 0; i < items.length; i++){
+        var it = items[i];
+
+        html +=
+          '<a href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer" ' +
+             'style="text-decoration:none; color:inherit;">' +
+            '<div style="display:grid; grid-template-columns:92px 1fr; gap:10px; padding:10px; border:1px solid var(--line);' +
+                        'border-radius:16px; background:rgba(255,255,255,0.55); align-items:center;">' +
+
+              (it.image
+                ? '<img src="' + escapeAttr(it.image) + '" alt="" style="width:92px; height:64px; object-fit:cover; border-radius:12px; border:1px solid rgba(15,23,42,0.10);" />'
+                : '<div style="width:92px; height:64px; border-radius:12px; border:1px solid rgba(15,23,42,0.10); background:rgba(15,23,42,0.04);"></div>'
+              ) +
+
+              '<div style="min-width:0;">' +
+                '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                  escapeHtml(it.title) +
+                "</div>" +
+                '<div style="margin-top:4px; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                  escapeHtml(it.groupTitle || "") +
+                "</div>" +
+              "</div>" +
+
             "</div>" +
-          "</div>" +
-          '<button class="qrBtn" data-link="' + link + '" style="border:1px solid var(--line);background:rgba(255,255,255,0.65);border-radius:12px;padding:9px 10px;font-size:14px;cursor:pointer">📱</button>' +
+          "</a>";
+      }
+
+      html += "</div>";
+      body.innerHTML = html;
+      status.textContent = "Updated";
+    } catch (e) {
+      body.innerHTML =
+        '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
+          '<div style="font-weight:900; color:rgba(15,23,42,0.75)">Feed failed to load</div>' +
+          '<div style="margin-top:8px; font-size:12px; white-space:pre-wrap;">' + escapeHtml(String(e && (e.stack || e))) + "</div>" +
         "</div>";
+      status.textContent = "";
     }
-
-    html += "</div>";
-    el.innerHTML = html;
-
-    var btns = el.querySelectorAll(".qrBtn");
-    for (var b = 0; b < btns.length; b++) {
-      btns[b].addEventListener("click", function (e) {
-        var url = e.currentTarget.getAttribute("data-link");
-        if (url) showQrOverlay(url);
-      });
-    }
-
-  } catch (err) {
-    el.innerHTML =
-      '<div style="padding:12px;border:1px solid var(--line);border-radius:16px;background:rgba(255,255,255,0.55)">' +
-      "<strong>Feed error</strong><pre style='font-size:12px;color:var(--muted)'>" +
-      escapeHtml(String(err)) +
-      "</pre></div>";
   }
+
+  await refresh();
+
+  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
+  setInterval(refresh, refreshMs);
 }
 
-function showQrOverlay(url) {
-  var old = document.getElementById("qrOverlay");
-  if (old) old.remove();
-
-  var overlay = document.createElement("div");
-  overlay.id = "qrOverlay";
-  overlay.style.position = "fixed";
-  overlay.style.top = "0";
-  overlay.style.left = "0";
-  overlay.style.right = "0";
-  overlay.style.bottom = "0";
-  overlay.style.background = "rgba(0,0,0,0.45)";
-  overlay.style.display = "flex";
-  overlay.style.alignItems = "center";
-  overlay.style.justifyContent = "center";
-  overlay.style.zIndex = "9999";
-
-  var box = document.createElement("div");
-  box.style.background = "white";
-  box.style.borderRadius = "20px";
-  box.style.padding = "16px";
-  box.style.textAlign = "center";
-  box.style.boxShadow = "0 20px 60px rgba(0,0,0,0.3)";
-
-  var img = document.createElement("img");
-  img.width = 220;
-  img.height = 220;
-  img.src =
-    "https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=" +
-    encodeURIComponent(url);
-
-  var txt = document.createElement("div");
-  txt.textContent = "Scan to open on phone";
-  txt.style.marginTop = "10px";
-  txt.style.fontSize = "13px";
-
-  box.appendChild(img);
-  box.appendChild(txt);
-  overlay.appendChild(box);
-
-  overlay.addEventListener("click", function () {
-    overlay.remove();
-  });
-
-  document.body.appendChild(overlay);
-}
-
-function escapeHtml(s) {
+function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, function (m) {
-    return {
-      "&": "&amp;",
-      "<": "&lt;",
-      ">": "&gt;",
-      '"': "&quot;",
-      "'": "&#039;"
-    }[m];
+    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
   });
 }
 
-function escapeAttr(s) {
-  return escapeHtml(s).replace(/"/g, "&quot;");
+function escapeAttr(s){
+  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
 }
