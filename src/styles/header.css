@@ -55,14 +55,14 @@
 
 /* Whole quote animation (no per-word timing) */
 .quoteAnim{
-  animation: quoteBreath 2.2s ease both;
+  animation: quoteBreath 4.2s ease-out both;
 }
 
 /* a gentle inhale/exhale appearance */
 @keyframes quoteBreath{
-  0%   { opacity: 0; transform: translateY(6px); filter: blur(0.6px); }
-  60%  { opacity: 1; transform: translateY(0); filter: blur(0px); }
-  100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+  0%   { opacity: 0; transform: translateY(10px); filter: blur(1px); }
+  50%  { opacity: 1; transform: translateY(0);  filter: blur(0px); }
+  100% { opacity: 1; transform: translateY(0);  filter: blur(0px); }
 }
 
 /* Time glass */
