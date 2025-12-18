@@ -21,18 +21,29 @@ export async function renderFeed(el) {
   el.innerHTML = `
     <div style="display:flex; flex-direction:column; gap:10px; max-height:520px; overflow:auto; padding-right:4px">
       ${items.map(i => `
-        <a href="${escapeAttr(i.link || "#")}" target="_blank" rel="noopener"
-           style="display:grid; grid-template-columns:96px 1fr; gap:12px; padding:10px; border-radius:16px;
-                  background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.06); align-items:center;">
-          <div style="width:96px; height:64px; border-radius:12px; overflow:hidden; background:rgba(255,255,255,0.06); display:flex; align-items:center; justify-content:center;">
-            ${i.image ? `<img src="${escapeAttr(i.image)}" style="width:100%; height:100%; object-fit:cover" alt="">`
-                      : `<span style="color:var(--muted); font-size:12px">No image</span>`}
+        <div class="feed-item">
+        <div style="display:flex; gap:10px; align-items:flex-start;">
+          <div style="flex:1; min-width:0;">
+            <a href="${item.link}" target="_blank"
+             style="font-weight:900; color:rgba(15,23,42,0.85); text-decoration:none;">
+            ${item.title}</a>
+            <div style="font-size:12px; color:var(--muted); margin-top:4px;">
+            ${item.source}</div>
           </div>
-          <div>
-            <div style="font-weight:800; font-size:14px; line-height:1.25">${escapeHtml(i.title)}</div>
-            <div style="color:var(--muted); font-size:12px; margin-top:6px">${escapeHtml(i.source)}</div>
-          </div>
-        </a>
+          <button
+          aria-label="Show QR"
+          onclick="window.__showQr('${encodeURIComponent(item.link)}')"
+          style="
+            border:1px solid var(--line);
+            background:rgba(255,255,255,0.6);
+            border-radius:10px;
+            padding:8px;
+            font-size:14px;
+            cursor:pointer;">
+            📱
+          </button>
+        </div>
+      </div>
       `).join("")}
     </div>
   `;
