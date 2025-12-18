@@ -423,4 +423,3 @@ export function renderHeader(el){
   tick();
   setInterval(tick, 1000 * 10);
 }
-```0
