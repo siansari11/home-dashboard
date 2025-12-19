@@ -1,46 +1,53 @@
-import './styles.css';
-import { renderHeader } from './components/header.js';
-import { renderWeather } from './lib/weather.js';
-import { renderFeed } from './components/feed.js';
-import { renderAgenda } from './components/agenda.js';
-import { renderTasks } from "./components/tasks.js";
+// src/main.js
+import "./styles.css";
 
-document.querySelector('#app').innerHTML = `
+import { renderHeader } from "./components/header.js";
+import { renderWeather } from "./components/weather.js";
+import { renderFeed } from "./components/feed.js";
+import { renderAgenda } from "./components/agenda.js";
+import { renderTasks } from "./components/tasks.js";
+import { renderReels } from "./components/reels.js";
+
+document.querySelector("#app").innerHTML = `
   <div class="wrap">
     <header id="header"></header>
 
-    <div class="grid">
-      <!-- LEFT: Weather + Events -->
+    <div class="grid grid--4">
+      <!-- COL 1: Weather + Events -->
       <section class="card strong">
         <h2>Weather</h2>
         <div id="weather">Loading…</div>
 
-        <div style="height:12px"></div>
+        <div class="spacer12"></div>
 
         <h2>Next events</h2>
         <div id="agenda">Loading…</div>
       </section>
 
-      <!-- MIDDLE: Tasks -->
+      <!-- COL 2: Tasks -->
       <section class="card">
         <h2>Tasks</h2>
-        <div id="tasks">(Next step — we’ll add proper tasks UI here)</div>
-        <div style="color:var(--muted); font-size:12px; margin-top:10px">
-          Pilot: local-only. Later: sync when Pi arrives.
-        </div>
+        <div id="tasks">Loading…</div>
       </section>
 
-      <!-- RIGHT: Feed -->
+      <!-- COL 3: Feed -->
       <section class="card">
         <h2>Feed</h2>
         <div id="feed">Loading…</div>
+      </section>
+
+      <!-- COL 4: Reels -->
+      <section class="card">
+        <h2>Reels</h2>
+        <div id="reels">Loading…</div>
       </section>
     </div>
   </div>
 `;
 
-renderHeader(document.querySelector('#header'));
-renderWeather(document.querySelector('#weather'));
-renderAgenda(document.querySelector('#agenda'));
+renderHeader(document.querySelector("#header"));
+renderWeather(document.querySelector("#weather"));
+renderAgenda(document.querySelector("#agenda"));
 renderTasks(document.querySelector("#tasks"));
-renderFeed(document.querySelector('#feed'));
+renderFeed(document.querySelector("#feed"));
+renderReels(document.querySelector("#reels"));
