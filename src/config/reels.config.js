@@ -2,15 +2,15 @@
 
 // ✅ “Food” column sources = instagram-style rss.app feeds + recipe rss feeds
 export const FOOD_RSS_URLS = [
+    // --- recipes (moved from lifestyle) ---
+  "https://www.eatingwell.com/rss",
+  "https://www.skinnytaste.com/feed/",
   // --- your rss.app feeds (insta/reels style) ---
-  "https://rss.app/feeds/peRsMzffKPMUvH0i.xml",
   "https://rss.app/feeds/1p7eRIJ3IbafIniz.xml",
   "https://rss.app/feeds/zJdNOAIhyefnGMux.xml",
   "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
 
-  // --- recipes (moved from lifestyle) ---
-  "https://www.eatingwell.com/rss",
-  "https://www.skinnytaste.com/feed/",
+
 ];
 
 // Always-works fallback (your own reels / favorite links)
