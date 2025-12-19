@@ -1,6 +1,5 @@
 // src/lib/weather.js
 import { CONFIG } from "../config.js";
-import { pickWeatherIcon } from "./weatherIcons.js";
 
 export async function renderWeather(el){
   const { lat, lon, name } = CONFIG.location;
@@ -22,31 +21,24 @@ export async function renderWeather(el){
   const wind = Math.round(data?.current?.wind_speed_10m ?? 0);
   const code = Number(data?.current?.weather_code ?? 0);
 
-  // choose nearest hour precip prob
   const rain = nearestHourlyValue(
     data?.hourly?.time || [],
     data?.hourly?.precipitation_probability || []
   );
 
-  const icon = pickWeatherIcon(code);
+  const iconSrc = iconForWeatherCode(code);
 
   el.innerHTML = `
     <div class="weatherStrip">
       <div class="weatherRow">
-        <div class="weatherIconWrap">
-          <img class="weatherIcon" alt="" src="${escapeAttr(icon)}" />
-        </div>
+        <img class="weatherIcon" alt="" src="${escapeAttr(iconSrc)}" />
 
         <div class="weatherMain">
           <div class="weatherTemp">${temp}°</div>
-          <div class="weatherMeta">
-            Wind ${wind} km/h • Rain chance ${rain ?? "—"}%
-          </div>
+          <div class="weatherMeta">Wind ${wind} km/h • Rain chance ${rain ?? "—"}%</div>
         </div>
 
-        <div class="weatherLoc">
-          📍 ${escapeHtml(name)}
-        </div>
+        <div class="weatherLoc">📍 ${escapeHtml(name)}</div>
       </div>
     </div>
   `;
@@ -61,10 +53,7 @@ function nearestHourlyValue(times, values){
     for (let i = 0; i < times.length; i++){
       const t = new Date(times[i]).getTime();
       const d = Math.abs(t - now);
-      if (d < best){
-        best = d;
-        bestIdx = i;
-      }
+      if (d < best){ best = d; bestIdx = i; }
     }
     const v = values[bestIdx];
     return (v === null || v === undefined) ? null : Math.round(Number(v));
@@ -73,11 +62,44 @@ function nearestHourlyValue(times, values){
   }
 }
 
+/**
+ * Open-Meteo weather_code mapping (simple buckets)
+ * We'll use your existing local icon files in /public/icons/…
+ * If you named them differently, just rename the filenames here.
+ */
+function iconForWeatherCode(code){
+  // ✅ Put your icon files here (in /public/icons/)
+  const base = "/home-dashboard/icons/";
+
+  // Thunderstorm
+  if (code >= 95) return base + "storm.png";
+
+  // Snow
+  if (code === 71 || code === 73 || code === 75 || code === 77 || code === 85 || code === 86)
+    return base + "snow.png";
+
+  // Rain / showers / freezing rain
+  if (code === 51 || code === 53 || code === 55 || code === 56 || code === 57 ||
+      code === 61 || code === 63 || code === 65 || code === 66 || code === 67 ||
+      code === 80 || code === 81 || code === 82)
+    return base + "rain.png";
+
+  // Fog
+  if (code === 45 || code === 48) return base + "fog.png";
+
+  // Cloudy
+  if (code === 2 || code === 3) return base + "cloudy.png";
+
+  // Partly cloudy
+  if (code === 1) return base + "partly.png";
+
+  // Clear
+  return base + "sun.png";
+}
+
 function escapeHtml(s){
   return String(s || "").replace(/[&<>"']/g, (m) => ({
     "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
   }[m]));
 }
-function escapeAttr(s){
-  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
-}
+function escapeAttr(s){ return escapeHtml(String(s || "")).replace(/"/g, "&quot;"); }
