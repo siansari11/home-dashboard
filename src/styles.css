@@ -10,56 +10,56 @@
 }
 
 *{ box-sizing:border-box; }
-html, body { height:100%; }
+html, body{ height:100%; }
+
 body{
   margin:0;
   font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
   color: var(--text);
 
   background-image:
-    linear-gradient(
-      180deg,
-      rgba(20,25,40,0.35),
-      rgba(244,246,251,0.85)
-    ),
+    linear-gradient(180deg, rgba(20,25,40,0.35), rgba(244,246,251,0.85)),
     url("/home-dashboard/bg.jpg");
 
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
+
+  overflow: hidden; /* kiosk default: cards scroll, not the page */
 }
 
-.wrap{ padding:18px; max-width:1280px; margin:0 auto; }
+.wrap{
+  padding:18px;
+  max-width:1280px;
+  margin:0 auto;
+
+  height: 100vh;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
 
 header{
-  display:flex; justify-content:space-between; align-items:flex-end;
+  flex:0 0 auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
   padding: 8px 4px 14px 4px;
 }
 
+/* ✅ MAIN LAYOUT: 2×2 only (stable) */
 .grid{
+  flex: 1 1 auto;
+  min-height: 0;
+
   display:grid;
-  grid-template-columns: 0.95fr 1.05fr 1.2fr; /* landscape */
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
   gap:14px;
-  align-items:start;
+  align-items: stretch;
 }
 
-/* ✅ 4-column variant (used when main.js adds class grid--4) */
-.grid.grid--4{
-  grid-template-columns: 0.95fr 1.05fr 1.2fr 1.0fr;
-}
-
-/* Default: stack on small portrait screens (phones) */
-@media (max-width: 980px) and (orientation: portrait){
-  .grid{ grid-template-columns: 1fr; }
-  .grid.grid--4{ grid-template-columns: 1fr; }
-}
-
-/* Force landscape layout when device is landscape (phone rotated, tablets, TV) */
-@media (orientation: landscape){
-  .grid{ grid-template-columns: 0.95fr 1.05fr 1.2fr; }
-  .grid.grid--4{ grid-template-columns: 0.95fr 1.05fr 1.2fr 1.0fr; }
-}
-
+/* Cards fill their cell and scroll internally */
 .card{
   background: var(--panel);
   border: 1px solid var(--line);
@@ -68,6 +68,13 @@ header{
   box-shadow: 0 10px 28px rgba(2, 6, 23, 0.10);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
+
+  min-height:0;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
+
+  display:flex;
+  flex-direction:column;
 }
 
 .card.strong{ background: var(--panel-strong); }
@@ -81,16 +88,12 @@ h2{
   text-transform: uppercase;
 }
 
-@media (min-width: 900px){
-  header div div:first-child{
-    font-size: 52px; /* household name bigger on tablets */
-  }
-}
-
 a{ color: inherit; text-decoration:none; }
 
 .pill{
-  display:inline-flex; align-items:center; gap:8px;
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
   padding:8px 10px;
   border-radius:999px;
   border:1px solid var(--line);
@@ -100,26 +103,21 @@ a{ color: inherit; text-decoration:none; }
   white-space:nowrap;
 }
 
-/* ✅ Replace inline <div style="height:12px"></div> */
+/* ✅ Replace inline spacer */
 .spacer12{ height:12px; }
 
-.quoteLine.quoteAnimate{
-  animation: quoteIn 700ms ease-out both;
-}
+/* =========================
+   Quotes animations (keep)
+   ========================= */
+.quoteLine.quoteAnimate{ animation: quoteIn 700ms ease-out both; }
 
 @keyframes quoteIn{
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Quote block fades out before switching */
-/* Slow, breathing fade out/in */
-.quoteBlock.quoteOut{
-  animation: quoteFadeOut 1800ms ease-in-out both;
-}
-.quoteBlock.quoteIn{
-  animation: quoteFadeIn 2200ms ease-in-out both;
-}
+.quoteBlock.quoteOut{ animation: quoteFadeOut 1800ms ease-in-out both; }
+.quoteBlock.quoteIn{  animation: quoteFadeIn 2200ms ease-in-out both; }
 
 @keyframes quoteFadeOut{
   from { opacity: 1; transform: translateY(0); }
@@ -130,10 +128,9 @@ a{ color: inherit; text-decoration:none; }
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* Each word appears one by one — slow exhale */
 .quoteWord{
-  display: inline-block;
-  opacity: 0;
+  display:inline-block;
+  opacity:0;
   transform: translateY(10px);
   animation: wordIn 1500ms ease-in-out both;
 }
@@ -143,273 +140,55 @@ a{ color: inherit; text-decoration:none; }
   to   { opacity: 1; transform: translateY(0); filter: blur(0px); }
 }
 
-.quotePunct{
-  opacity: 0.9;
-}
+.quotePunct{ opacity: 0.9; }
+
 /* =========================
-   Column scrolling (Cards scroll, not the whole page)
+   Weather strip sizing (compact)
    ========================= */
-
-.wrap{
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-header{
-  flex: 0 0 auto;
-}
-
-/* Grid takes the remaining height under header */
-.grid{
-  flex: 1 1 auto;
-  min-height: 0; /* critical for overflow to work inside children */
-}
-
-/* Each card becomes a scroll container */
-.card{
-  height: 100%;
-  min-height: 0;
-  overflow: auto;
-}
-/* =========================
-   New layout: 2x2 grid + weather strip
-   ========================= */
-
 .weatherStrip{
-  margin-bottom: 14px;
-}
-
-/* 2 columns, 2 rows */
-.grid.grid--2x2{
-  grid-template-columns: 1fr 1fr;
-}
-
-/* On small portrait screens, stack */
-@media (max-width: 980px) and (orientation: portrait){
-  .grid.grid--2x2{ grid-template-columns: 1fr; }
-}
-
-/* Keep card scrolling behavior */
-.wrap{
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.grid{
-  flex: 1 1 auto;
-  min-height: 0;
-}
-
-.card{
-  min-height: 0;
-  overflow: auto;
-}
-/* =========================
-   FIX: Make 2x2 rows height-constrained so cards can scroll
-   ========================= */
-
-/* Grid takes remaining height (already set), now force 2 equal-height rows */
-.grid.grid--2x2{
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;   /* ✅ key */
-  align-items: stretch;          /* ✅ key */
-}
-
-/* Make each card fill its grid cell height */
-.grid.grid--2x2 > .card{
-  height: 100%;
-  min-height: 0;
-  overflow: auto;               /* scroll inside card */
-}
-
-/* On small portrait screens, stack */
-@media (max-width: 980px) and (orientation: portrait){
-  .grid.grid--2x2{
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;   /* stacked: normal flow */
-  }
-  .grid.grid--2x2 > .card{
-    height: auto;
-    overflow: visible;
-  }
-}
-/* =========================
-   HARD FIX: kiosk layout (body doesn’t scroll; cards do)
-   ========================= */
-
-html, body{
-  height: 100%;
-}
-
-body{
-  overflow: hidden; /* ✅ stop page scrolling */
-}
-
-.wrap{
-  height: 100vh;          /* ✅ lock to viewport */
-  display: flex;
-  flex-direction: column;
-}
-
-/* Weather strip should not expand infinitely */
-.weatherStrip{
-  flex: 0 0 auto;
-}
-
-/* Grid takes remaining height */
-.grid{
-  flex: 1 1 auto;
-  min-height: 0;          /* ✅ critical */
-}
-
-/* 2x2 grid must have fixed row heights */
-.grid.grid--2x2{
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 1fr 1fr;  /* ✅ fixed rows */
-  align-items: stretch;
-  min-height: 0;
-}
-
-/* Cards scroll inside their cell */
-.grid.grid--2x2 > .card{
-  height: 100%;
-  min-height: 0;
-  overflow: auto;         /* ✅ scroll here */
-  -webkit-overflow-scrolling: touch;
-}
-
-/* Small portrait: allow page flow again */
-@media (max-width: 980px) and (orientation: portrait){
-  body{ overflow: auto; }
-
-  .wrap{ height: auto; }
-
-  .grid.grid--2x2{
-    grid-template-columns: 1fr;
-    grid-template-rows: auto;
-  }
-
-  .grid.grid--2x2 > .card{
-    height: auto;
-    overflow: visible;
-  }
-}
-/* Compact weather strip (so it doesn't push the grid off-screen) */
-.weatherStrip{
+  width:100%;
   padding: 10px 14px;
   margin-bottom: 12px;
   max-height: 120px;
-  overflow: hidden;
+  overflow:hidden;
 }
 
-/* If your weather component has big numbers, this helps */
+/* If present in markup */
 .weatherStrip .weatherTemp{
-  font-size: 30px !important;
+  font-size: 30px;
   line-height: 1.05;
 }
-
 .weatherStrip .weatherMeta{
-  font-size: 12px !important;
+  font-size: 12px;
 }
+
 /* =========================
-   FIX: short-height landscape should scroll the page
+   Allow page scroll on short landscape screens (your screenshot case)
    ========================= */
 @media (orientation: landscape) and (max-height: 700px){
-  body{ overflow: auto; }          /* allow page scroll */
-  .wrap{ height: auto; }           /* no forced 100vh */
-  .grid{ flex: 0 0 auto; min-height: auto; }
-
-  /* Grid rows can auto-size; cards don't trap overflow */
-  .grid.grid--2x2{
+  body{ overflow:auto; }
+  .wrap{ height:auto; min-height: 100vh; }
+  .grid{
     grid-template-rows: auto auto;
-    align-items: start;
   }
-  .grid.grid--2x2 > .card{
-    height: auto;
+  .card{
+    height:auto;
     overflow: visible;
   }
+}
 
-  /* Make weather extra compact in this mode */
-  .weatherStrip{
-    margin-bottom: 8px;
-    max-height: 88px;
-    padding: 8px 12px;
+/* =========================
+   Portrait phones: stack
+   ========================= */
+@media (max-width: 980px) and (orientation: portrait){
+  body{ overflow:auto; }
+  .wrap{ height:auto; min-height: 100vh; }
+  .grid{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
   }
-
-  /* Make the Lifestyle/Food carousels a touch shorter */
-  .tileCarousel{ height: 180px; }
-}
-
-/* =========================
-   FIX: consistent widths + equal heights in the 2x2 layout
-   ========================= */
-
-/* Ensure the 2x2 grid uses identical column widths */
-.grid.grid--2x2{
-  grid-template-columns: 1fr 1fr !important;
-  align-items: stretch !important;
-}
-
-/* Make cards in the same row stretch to the same height */
-.grid.grid--2x2 > .card{
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-/* Make Weather row/strip occupy the full card width */
-#weather,
-.weatherStrip{
-  width: 100%;
-}
-
-/* If Weather content uses an inner flex row, force it to fill width */
-#weather > div{
-  width: 100%;
-}
-
-/* Make Agenda + Tasks blocks share remaining height so they align */
-#agenda,
-#tasks{
-  flex: 1 1 auto;
-  min-height: 0;   /* important for proper flex sizing */
-}
-
-/* Optional: if you want their content to scroll instead of growing */
-#agenda,
-#tasks{
-  overflow: auto;
-}
-/* =========================
-   HARD FIX: make the main grid truly 50/50
-   (your layout uses .grid, not .grid--2x2)
-   ========================= */
-
-.grid{
-  grid-template-columns: 1fr 1fr !important;   /* equal columns */
-  align-items: stretch !important;             /* cards stretch in row */
-}
-
-/* cards fill their grid cell consistently */
-.grid > .card{
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* prevents overflow squeezing other column */
-}
-
-/* make the inside blocks scroll instead of changing card heights */
-#agenda,
-#tasks{
-  flex: 1 1 auto;
-  min-height: 0;
-  overflow: auto;
-}
-
-/* keep Lifestyle/Food carousels compact and not forcing card height */
-.tileCarousel{
-  flex: 0 0 auto;
+  .card{
+    height:auto;
+    overflow: visible;
+  }
 }
