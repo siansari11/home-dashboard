@@ -91,7 +91,7 @@ function findImageUrl(node, descriptionHtml){
   return "";
 }
 
-export async function loadFeedItems(){
+export async function loadRssItems(){
   var groups = getEnabledFeedGroups();
   var maxTotal = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.maxItemsTotal) ? DASHBOARD_CONFIG.rss.maxItemsTotal : 10;
   var maxPerGroup = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.maxItemsPerGroup) ? DASHBOARD_CONFIG.rss.maxItemsPerGroup : 6;
