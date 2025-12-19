@@ -13,9 +13,9 @@ export async function renderFeed(el){
   var status = el.querySelector("#feedStatus");
   var body = el.querySelector("#feedBody");
 
-  function qrUrl(link){
+  function qrUrl(link, size){
     var data = encodeURIComponent(String(link || "").trim());
-    return "https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=" + data;
+    return "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "&data=" + data;
   }
 
   async function refresh(){
@@ -40,9 +40,8 @@ export async function renderFeed(el){
         var id = "fi_" + i;
 
         html +=
-          '<div ' +
-            'style="display:grid; grid-template-columns:92px 1fr; gap:10px; padding:10px; border:1px solid var(--line);' +
-                   'border-radius:16px; background:rgba(255,255,255,0.55); align-items:center;">' +
+          '<div style="display:grid; grid-template-columns:92px 1fr; gap:10px; padding:10px; border:1px solid var(--line);' +
+                       'border-radius:16px; background:rgba(255,255,255,0.55); align-items:center;">' +
 
             (it.image
               ? '<img src="' + escapeAttr(it.image) + '" alt="" ' +
@@ -52,28 +51,28 @@ export async function renderFeed(el){
 
             '<div style="min-width:0;">' +
 
-              // Title (clickable on desktop)
-              '<a href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer" ' +
-                 'style="text-decoration:none; color:inherit; display:block;">' +
-                '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
-                  escapeHtml(it.title) +
-                "</div>" +
-              "</a>" +
+              // Title row with inline tiny QR
+              '<div style="display:flex; align-items:center; gap:6px; min-width:0;">' +
+
+                '<a href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer" ' +
+                   'style="text-decoration:none; color:inherit; min-width:0; flex:1;">' +
+                  '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
+                    escapeHtml(it.title) +
+                  "</div>" +
+                "</a>" +
+
+                // Tiny QR icon
+                '<img data-qr-btn="' + escapeAttr(id) + '" data-link="' + escapeAttr(it.link) + '" ' +
+                     'src="' + qrUrl(it.link, "32x32") + '" alt="QR" ' +
+                     'style="width:18px; height:18px; border-radius:4px; cursor:pointer; opacity:0.75;" />' +
+
+              "</div>" +
 
               '<div style="margin-top:4px; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
                 escapeHtml(it.groupTitle || "") +
               "</div>" +
 
-              // QR action only
-              '<div style="margin-top:8px;">' +
-                '<button type="button" data-qr-btn="' + escapeAttr(id) + '" data-link="' + escapeAttr(it.link) + '" ' +
-                   'style="font-size:12px; font-weight:800; padding:6px 10px; border-radius:12px; cursor:pointer; ' +
-                          'border:1px solid rgba(15,23,42,0.12); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.75);">' +
-                  "QR" +
-                "</button>" +
-              "</div>" +
-
-              // QR panel
+              // QR panel (expanded)
               '<div id="' + escapeAttr(id) + '" style="display:none; margin-top:10px; gap:10px; align-items:center;">' +
                 '<img data-qr-img="' + escapeAttr(id) + '" alt="QR" ' +
                      'style="width:110px; height:110px; border-radius:12px; border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.7);" />' +
@@ -87,10 +86,10 @@ export async function renderFeed(el){
       html += "</div>";
       body.innerHTML = html;
 
-      // Wire QR buttons
-      var btns = body.querySelectorAll("[data-qr-btn]");
-      for (var b = 0; b < btns.length; b++){
-        btns[b].addEventListener("click", function(ev){
+      // Wire tiny QR clicks
+      var qrBtns = body.querySelectorAll("[data-qr-btn]");
+      for (var b = 0; b < qrBtns.length; b++){
+        qrBtns[b].addEventListener("click", function(ev){
           ev.preventDefault();
           ev.stopPropagation();
 
@@ -104,7 +103,7 @@ export async function renderFeed(el){
 
           if (!open) {
             var img = panel.querySelector('[data-qr-img="' + panelId + '"]');
-            if (img && !img.getAttribute("src")) img.setAttribute("src", qrUrl(link));
+            if (img && !img.getAttribute("src")) img.setAttribute("src", qrUrl(link, "110x110"));
           }
         });
       }
