@@ -1,6 +1,5 @@
 // src/components/reels.js
 import "../styles/reels.css";
-import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 import { REELS_CONFIG } from "../config/reels.config.js";
 import { loadReels } from "../lib/reels.js";
 import { makeQrDataUrl } from "../lib/qr.js";
@@ -17,7 +16,6 @@ export async function renderReels(el){
 
   var status = document.createElement("div");
   status.className = "reelsStatus";
-  status.textContent = "";
 
   header.append(pill, status);
 
@@ -57,18 +55,28 @@ export async function renderReels(el){
         var media = document.createElement("div");
         media.className = "reelsMedia";
 
+        var ph = document.createElement("div");
+        ph.className = "reelsPlaceholder";
+        ph.textContent = (REELS_CONFIG && REELS_CONFIG.placeholderEmoji) ? REELS_CONFIG.placeholderEmoji : "🎬";
+
         if (it.image){
           var img = document.createElement("img");
           img.className = "reelsThumb";
-          img.src = it.image;
           img.alt = "";
           img.loading = "lazy";
           img.decoding = "async";
+          img.src = it.image;
+
+          img.onerror = function(){
+            // if image fails, show placeholder instead
+            if (img && img.parentNode) {
+              img.parentNode.innerHTML = "";
+              img.parentNode.appendChild(ph.cloneNode(true));
+            }
+          };
+
           media.appendChild(img);
         } else {
-          var ph = document.createElement("div");
-          ph.className = "reelsPlaceholder";
-          ph.textContent = REELS_CONFIG.placeholderEmoji || "🎬";
           media.appendChild(ph);
         }
 
@@ -78,7 +86,6 @@ export async function renderReels(el){
         var titleRow = document.createElement("div");
         titleRow.className = "reelsTitleRow";
 
-        // Tiny QR inline (before title)
         var qr = document.createElement("img");
         qr.className = "reelsQr";
         qr.alt = "QR";
@@ -89,7 +96,6 @@ export async function renderReels(el){
         title.textContent = it.title || "Instagram Reel";
 
         titleRow.append(qr, title);
-
         meta.appendChild(titleRow);
 
         card.append(media, meta);
