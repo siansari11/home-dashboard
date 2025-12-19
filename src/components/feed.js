@@ -10,60 +10,47 @@ export async function renderFeed(el){
       <div class="pill">🏠 Lifestyle</div>
       <div id="lifeStatus" class="tileStatus"></div>
     </div>
-    <div id="lifeStage" class="tileStage tileFadeIn"></div>
+    <div id="lifeCarousel" class="tileCarousel" aria-label="Lifestyle carousel"></div>
   `;
 
   var status = el.querySelector("#lifeStatus");
-  var stage = el.querySelector("#lifeStage");
+  var carousel = el.querySelector("#lifeCarousel");
 
   var items = [];
-  var idx = 0;
+  var autoTimer = null;
   var rotateMs = 30 * 1000;
-  var timer = null;
 
-  function safeTitle(it){
-    return (it && it.title) ? String(it.title) : "Lifestyle item";
+  function perViewNow(){
+    return window.matchMedia && window.matchMedia("(orientation: portrait)").matches ? 1 : 2;
   }
 
-  function safeSource(it){
-    return (it && it.groupTitle) ? String(it.groupTitle) : "";
-  }
+  function render(){
+    carousel.innerHTML = "";
 
-  function safeLink(it){
-    return (it && it.link) ? String(it.link) : "";
-  }
-
-  function safeImg(it){
-    return (it && it.image) ? String(it.image) : "";
-  }
-
-  function renderCurrent(){
     if (!items.length){
-      stage.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
+      var empty = document.createElement("div");
+      empty.className = "tileItem";
+      empty.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
+      carousel.appendChild(empty);
       return;
     }
 
-    var it = items[idx % items.length];
-    var link = safeLink(it);
-    var title = safeTitle(it);
-    var sub = safeSource(it);
-    var img = safeImg(it);
-    var qr = makeQrDataUrl(link, 80);
+    for (var i = 0; i < items.length; i++){
+      var it = items[i];
+      var link = String(it.link || "");
+      if (!link) continue;
 
-    stage.classList.remove("tileFadeIn");
-    stage.classList.add("tileFadeOut");
+      var title = String(it.title || "Lifestyle item");
+      var sub = String(it.groupTitle || "");
+      var img = String(it.image || "");
+      var qr = makeQrDataUrl(link, 80);
 
-    setTimeout(function(){
-      stage.classList.remove("tileFadeOut");
-      stage.classList.add("tileFadeIn");
+      var tile = document.createElement("div");
+      tile.className = "tileItem";
 
-      stage.innerHTML = `
+      tile.innerHTML = `
         <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
-          ${
-            img
-              ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />`
-              : `<div class="tilePlaceholder">🏠</div>`
-          }
+          ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">🏠</div>`}
           <div class="tileOverlay">
             <div class="tileTitleRow">
               <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
@@ -74,53 +61,75 @@ export async function renderFeed(el){
         </a>
       `;
 
-      // If image fails, switch to placeholder (no broken tile)
-      var imgEl = stage.querySelector(".tileImg");
+      // if image fails, swap to placeholder
+      var imgEl = tile.querySelector(".tileImg");
       if (imgEl){
         imgEl.addEventListener("error", function(){
-          stage.querySelector(".tileLink").innerHTML = `
-            <div class="tilePlaceholder">🏠</div>
-            <div class="tileOverlay">
-              <div class="tileTitleRow">
-                <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
-                <div class="tileTitle">${escapeHtml(title)}</div>
-              </div>
-              ${sub ? `<div class="tileSub">${escapeHtml(sub)}</div>` : ``}
-            </div>
-          `;
+          var wrap = this.closest(".tileItem");
+          if (!wrap) return;
+          var linkEl = wrap.querySelector(".tileLink");
+          if (!linkEl) return;
+          // replace image with placeholder, keep overlay
+          var overlay = wrap.querySelector(".tileOverlay");
+          linkEl.innerHTML = `<div class="tilePlaceholder">🏠</div>` + (overlay ? overlay.outerHTML : "");
         }, { once:true });
       }
-    }, 420);
+
+      carousel.appendChild(tile);
+    }
   }
 
-  function next(){
-    if (!items.length) return;
-    idx = (idx + 1) % items.length;
-    renderCurrent();
-  }
-
-  function prev(){
-    if (!items.length) return;
-    idx = (idx - 1 + items.length) % items.length;
-    renderCurrent();
+  function scrollToIndex(nextIndex){
+    var tile = carousel.children[nextIndex];
+    if (!tile) return;
+    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
   }
 
   function startAuto(){
     stopAuto();
-    timer = setInterval(next, rotateMs);
+    autoTimer = setInterval(function(){
+      if (!items.length) return;
+
+      var pv = perViewNow();
+      var firstVisible = getFirstVisibleIndex();
+      var next = firstVisible + pv;
+
+      if (next >= carousel.children.length) next = 0;
+      scrollToIndex(next);
+    }, rotateMs);
   }
 
   function stopAuto(){
-    if (timer) clearInterval(timer);
-    timer = null;
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
   }
 
-  // Swipe controls (up/down or left/right)
-  wireSwipe(stage, function(dir){
-    // any swipe pauses the timer briefly and restarts
-    stopAuto();
-    if (dir === "next") next();
-    else prev();
+  function getFirstVisibleIndex(){
+    var children = carousel.children;
+    if (!children.length) return 0;
+
+    var left = carousel.scrollLeft;
+    var best = 0;
+    var bestDist = Infinity;
+
+    for (var i = 0; i < children.length; i++){
+      var d = Math.abs(children[i].offsetLeft - left);
+      if (d < bestDist){
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  // pause auto while user interacts
+  carousel.addEventListener("pointerdown", stopAuto);
+  carousel.addEventListener("touchstart", stopAuto, { passive:true });
+  carousel.addEventListener("pointerup", startAuto);
+  carousel.addEventListener("touchend", startAuto);
+
+  // re-evaluate perView when orientation changes
+  window.addEventListener("resize", function(){
     startAuto();
   });
 
@@ -128,20 +137,13 @@ export async function renderFeed(el){
     status.textContent = "Updating…";
     try {
       items = await loadRssItems();
-      idx = 0;
-
-      if (!items.length){
-        status.textContent = "";
-        stage.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
-        return;
-      }
-
-      status.textContent = "Updated";
-      renderCurrent();
+      status.textContent = items.length ? "Updated" : "";
+      render();
       startAuto();
     } catch (e) {
       status.textContent = "";
-      stage.innerHTML = `<div class="tilePlaceholder">⚠️</div>`;
+      items = [];
+      render();
     }
   }
 
@@ -149,50 +151,6 @@ export async function renderFeed(el){
 
   var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
-}
-
-function wireSwipe(el, onDir){
-  var startX = 0, startY = 0, moved = false;
-  var active = false;
-
-  el.addEventListener("pointerdown", function(e){
-    active = true;
-    moved = false;
-    startX = e.clientX;
-    startY = e.clientY;
-  });
-
-  el.addEventListener("pointermove", function(e){
-    if (!active) return;
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) moved = true;
-  });
-
-  el.addEventListener("pointerup", function(e){
-    if (!active) return;
-    active = false;
-
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-
-    var ax = Math.abs(dx), ay = Math.abs(dy);
-    var threshold = 32;
-
-    if (ax < threshold && ay < threshold) return;
-
-    // If user swiped, avoid accidental click-open
-    if (moved) e.preventDefault();
-
-    // Decide direction
-    if (ax >= ay){
-      // horizontal swipe: left = next, right = prev
-      onDir(dx < 0 ? "next" : "prev");
-    } else {
-      // vertical swipe: up = next, down = prev
-      onDir(dy < 0 ? "next" : "prev");
-    }
-  });
 }
 
 function escapeHtml(s){
