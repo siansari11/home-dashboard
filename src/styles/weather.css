@@ -20,7 +20,7 @@
 
 /* ICON — NO BOX, NO BORDER */
 .weatherIconBox{
-  width:110px;
+  width:150px;
   height:110px;
   display:flex;
   align-items:center;
@@ -28,7 +28,7 @@
 }
 
 .weatherIconImg{
-  width:110px;
+  width:135px;
   height:110px;
   object-fit:contain;
   display:none;
