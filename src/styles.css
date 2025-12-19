@@ -192,3 +192,37 @@ a{ color: inherit; text-decoration:none; }
     overflow: visible;
   }
 }
+/* Weather row layout (icon + temp + meta + location) */
+.weatherRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.weatherIconWrap{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
+}
+
+.weatherIcon{
+  width:64px;
+  height:64px;
+  object-fit:contain;
+}
+
+.weatherMain{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.weatherLoc{
+  flex:0 0 auto;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.20);
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+}
