@@ -2,23 +2,26 @@
 import "./styles.css";
 
 import { renderHeader } from "./components/header.js";
-import { renderWeather } from "./components/weather.js";
-import { renderFeed } from "./components/feed.js";
+import { renderWeather } from "./lib/weather.js";
 import { renderAgenda } from "./components/agenda.js";
 import { renderTasks } from "./components/tasks.js";
-import { renderReels } from "./components/reels.js";
+import { renderFeed } from "./components/feed.js";     // Lifestyle
+import { renderReels } from "./components/reels.js";   // Food
 
 document.querySelector("#app").innerHTML = `
   <div class="wrap">
     <header id="header"></header>
 
-    <section class="card weatherStrip">
+    <!-- Weather sits above the 2x2 grid, full width -->
+    <section class="card strong weatherCard">
+      <h2>Weather</h2>
       <div id="weather">Loading…</div>
     </section>
 
+    <!-- ONE grid = 2 columns, 2 rows -->
     <div class="grid grid--2x2">
       <section class="card">
-        <h2>Next events</h2>
+        <h2>Events</h2>
         <div id="agenda">Loading…</div>
       </section>
 
