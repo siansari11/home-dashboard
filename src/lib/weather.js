@@ -69,7 +69,7 @@ function nearestHourlyValue(times, values){
  */
 function iconForWeatherCode(code){
   // ✅ Put your icon files here (in /public/icons/)
-  const base = "/home-dashboard/weather/";
+  const base = "/home-dashboard/public/weather/";
 
   // Thunderstorm
   if (code >= 95) return base + "storm.png";
