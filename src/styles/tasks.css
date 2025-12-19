@@ -1,0 +1,146 @@
+/* src/styles/tasks.css */
+
+.tasksHeader{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.tasksClearBtn{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.55);
+  color:var(--muted);
+  border-radius:12px;
+  padding:10px 12px;
+  font-weight:900;
+  font-size:13px;
+}
+
+.tasksAddRow{
+  display:flex;
+  gap:10px;
+  margin-top:10px;
+}
+
+.taskInput{
+  flex:1;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.65);
+  border-radius:14px;
+  padding:12px 12px;
+  font-size:14px;
+  outline:none;
+}
+
+.taskAddBtn{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.75);
+  color:rgba(15,23,42,0.72);
+  border-radius:14px;
+  padding:12px 14px;
+  font-weight:900;
+  font-size:14px;
+  white-space:nowrap;
+}
+
+.tasksNote{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:10px;
+}
+
+/* Empty card */
+.taskEmptyCard{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,0.55);
+}
+
+.taskEmptyTitle{
+  font-weight:900;
+  color:rgba(15,23,42,0.75);
+}
+
+.taskEmptyText{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
+}
+
+/* Scroll area */
+.taskScroll{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  max-height:360px;
+  overflow:auto;
+  padding-right:4px;
+}
+
+/* Task row */
+.taskRow{
+  display:grid;
+  grid-template-columns:34px 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 12px;
+  border-radius:16px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.65);
+}
+
+.taskRow--done{
+  background:rgba(15,23,42,0.05);
+}
+
+/* Toggle button */
+.taskToggleBtn{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.75);
+  font-weight:900;
+}
+
+.taskToggleBtn--done{
+  background:rgba(37,99,235,0.12);
+}
+
+/* Text */
+.taskMain{
+  min-width:0;
+}
+
+.taskText{
+  font-weight:900;
+  color:rgba(15,23,42,0.78);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.taskText--done{
+  text-decoration:line-through;
+  opacity:0.55;
+}
+
+.taskSub{
+  color:var(--muted);
+  font-size:12px;
+  margin-top:2px;
+}
+
+/* Delete */
+.taskDeleteBtn{
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.65);
+  color:var(--muted);
+  border-radius:12px;
+  padding:9px 10px;
+  font-weight:900;
+  font-size:13px;
+}
