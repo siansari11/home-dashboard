@@ -43,14 +43,21 @@ header{
   align-items:start;
 }
 
+/* ✅ 4-column variant (used when main.js adds class grid--4) */
+.grid.grid--4{
+  grid-template-columns: 0.95fr 1.05fr 1.2fr 1.0fr;
+}
+
 /* Default: stack on small portrait screens (phones) */
 @media (max-width: 980px) and (orientation: portrait){
   .grid{ grid-template-columns: 1fr; }
+  .grid.grid--4{ grid-template-columns: 1fr; }
 }
 
 /* Force landscape layout when device is landscape (phone rotated, tablets, TV) */
 @media (orientation: landscape){
   .grid{ grid-template-columns: 0.95fr 1.05fr 1.2fr; }
+  .grid.grid--4{ grid-template-columns: 0.95fr 1.05fr 1.2fr 1.0fr; }
 }
 
 .card{
@@ -73,6 +80,7 @@ h2{
   letter-spacing: .10em;
   text-transform: uppercase;
 }
+
 @media (min-width: 900px){
   header div div:first-child{
     font-size: 52px; /* household name bigger on tablets */
@@ -91,6 +99,10 @@ a{ color: inherit; text-decoration:none; }
   font-size: 13px;
   white-space:nowrap;
 }
+
+/* ✅ Replace inline <div style="height:12px"></div> */
+.spacer12{ height:12px; }
+
 .quoteLine.quoteAnimate{
   animation: quoteIn 700ms ease-out both;
 }
