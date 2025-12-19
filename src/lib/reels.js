@@ -1,6 +1,6 @@
 // src/lib/reels.js
 import { CONFIG } from "../config.js";
-import { REELS_RSS_URLS, REELS_FALLBACK, REELS_CONFIG } from "../config/reels.config.js";
+import { FOOD_RSS_URLS, FOOD_FALLBACK, FOOD_CONFIG } from "../config/reels.config.js";
 
 function withCorsProxy(url){
   if (CONFIG && Array.isArray(CONFIG.corsProxies) && CONFIG.corsProxies.length){
@@ -31,13 +31,11 @@ async function fetchTextWithFallback(url){
 function pickFirstImgFromHtml(html){
   if (!html) return "";
   try {
-    // Parse HTML safely
     var doc = new DOMParser().parseFromString(String(html), "text/html");
     var img = doc.querySelector("img");
     var src = img ? (img.getAttribute("src") || "") : "";
     return src.trim();
   } catch (e) {
-    // Fallback regex (very minimal)
     var m = String(html).match(/<img[^>]+src=["']([^"']+)["']/i);
     return m && m[1] ? String(m[1]).trim() : "";
   }
@@ -56,25 +54,21 @@ function parseRssItems(xmlText){
     var title = (it.querySelector("title")?.textContent || "").trim();
     var link  = (it.querySelector("link")?.textContent || "").trim();
 
-    // image candidates (rss.app can vary a lot)
     var img =
       it.querySelector("media\\:thumbnail")?.getAttribute("url") ||
       it.querySelector("media\\:content")?.getAttribute("url") ||
       it.querySelector("enclosure")?.getAttribute("url") ||
       "";
 
-    // If still nothing, try <description> HTML
     if (!img) {
       var desc = it.querySelector("description")?.textContent || "";
       img = pickFirstImgFromHtml(desc);
     }
 
-    // DO NOT over-filter. Some CDNs don’t end with .jpg/.png.
-    // We’ll let the browser try loading it; if it fails we show placeholder in UI.
     if (!link) continue;
 
     out.push({
-      title: title || "Instagram Reel",
+      title: title || "Food item",
       link: link,
       image: img || "",
     });
@@ -98,23 +92,19 @@ function uniqByLink(list){
 export async function loadReels(){
   var all = [];
 
-  for (var i = 0; i < REELS_RSS_URLS.length; i++){
+  for (var i = 0; i < FOOD_RSS_URLS.length; i++){
     try {
-      var xml = await fetchTextWithFallback(REELS_RSS_URLS[i]);
-      var parsed = parseRssItems(xml);
-      all = all.concat(parsed);
-    } catch (e) {
-      // ignore single feed failure
-    }
+      var xml = await fetchTextWithFallback(FOOD_RSS_URLS[i]);
+      all = all.concat(parseRssItems(xml));
+    } catch (e) {}
   }
 
-  // Always-works fallback list
-  if (Array.isArray(REELS_FALLBACK) && REELS_FALLBACK.length){
-    all = all.concat(REELS_FALLBACK);
+  if (Array.isArray(FOOD_FALLBACK) && FOOD_FALLBACK.length){
+    all = all.concat(FOOD_FALLBACK);
   }
 
   all = uniqByLink(all);
 
-  var max = (REELS_CONFIG && REELS_CONFIG.maxItems) ? REELS_CONFIG.maxItems : 10;
+  var max = (FOOD_CONFIG && FOOD_CONFIG.maxItems) ? FOOD_CONFIG.maxItems : 14;
   return all.slice(0, max);
 }
