@@ -3,7 +3,7 @@
   display:flex;
   justify-content:space-between;
   align-items:center;
-  gap:10px;
+  gap:1px;
 }
 
 .weatherLeft{
@@ -14,7 +14,7 @@
 .weatherTopLine{
   display:flex;
   align-items:center;
-  gap:16px;
+  gap:1px;
 }
 
 /* ICON — NO BOX, NO BORDER */
