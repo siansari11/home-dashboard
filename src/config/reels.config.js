@@ -6,9 +6,11 @@ export const FOOD_RSS_URLS = [
   "https://www.eatingwell.com/rss",
   "https://www.skinnytaste.com/feed/",
   // --- your rss.app feeds (insta/reels style) ---
+  /*
   "https://rss.app/feeds/1p7eRIJ3IbafIniz.xml",
   "https://rss.app/feeds/zJdNOAIhyefnGMux.xml",
   "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
+  */
 
 
 ];
