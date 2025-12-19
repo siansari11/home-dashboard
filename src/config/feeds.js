@@ -8,7 +8,7 @@ export const FEED_GROUPS = [
     urls: [
       "https://www.thespruce.com/rss",
       // Add more lifestyle sources later if you want:
-      // "https://www.apartmenttherapy.com/main.rss",
+      "https://www.apartmenttherapy.com/main.rss",
     ],
   },
 ];
