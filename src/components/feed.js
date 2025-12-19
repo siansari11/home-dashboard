@@ -16,7 +16,7 @@ export async function renderFeed(el){
   async function refresh(){
     status.textContent = "Updating…";
     try {
-      var items = await loadFeedItems();
+      var items = await loadRssItems();
 
       if (!items.length) {
         body.innerHTML =
