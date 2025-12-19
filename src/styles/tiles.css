@@ -158,9 +158,15 @@
   color: rgba(15,23,42,0.85);
   font-size:14px;
   line-height:1.18;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
+
+  /* ✅ show full title (wrap), do NOT ellipsize */
+  white-space: normal;
+  overflow: hidden;
+
+  /* prevent crazy long titles from taking over */
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;  /* show up to 3 lines */
 }
 
 .tileSub{
