@@ -206,3 +206,32 @@ header{
   min-height: 0;
   overflow: auto;
 }
+/* =========================
+   FIX: Make 2x2 rows height-constrained so cards can scroll
+   ========================= */
+
+/* Grid takes remaining height (already set), now force 2 equal-height rows */
+.grid.grid--2x2{
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;   /* ✅ key */
+  align-items: stretch;          /* ✅ key */
+}
+
+/* Make each card fill its grid cell height */
+.grid.grid--2x2 > .card{
+  height: 100%;
+  min-height: 0;
+  overflow: auto;               /* scroll inside card */
+}
+
+/* On small portrait screens, stack */
+@media (max-width: 980px) and (orientation: portrait){
+  .grid.grid--2x2{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;   /* stacked: normal flow */
+  }
+  .grid.grid--2x2 > .card{
+    height: auto;
+    overflow: visible;
+  }
+}
