@@ -1,6 +1,5 @@
 /* src/styles/feed.css */
 
-/* header */
 .feedHeader{
   display:flex;
   justify-content:space-between;
@@ -14,44 +13,22 @@
   color:var(--muted);
 }
 
-/* body default */
 .feedBody{
   color:var(--muted);
 }
 
-/* list */
+/* ✅ This guarantees scroll even if outer card refuses */
 .feedList{
   display:flex;
   flex-direction:column;
   gap:10px;
+  max-height:360px;
+  overflow:auto;
+  padding-right:4px;
+  -webkit-overflow-scrolling: touch;
 }
 
-/* empty/error notice */
-.feedCardNotice{
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:rgba(255,255,255,0.55);
-}
-
-.feedCardNotice__title{
-  font-weight:900;
-  color:rgba(15,23,42,0.75);
-}
-
-.feedCardNotice__text{
-  margin-top:6px;
-  font-size:13px;
-}
-
-.feedCardNotice__error{
-  margin-top:8px;
-  font-size:12px;
-  white-space:pre-wrap;
-}
-
-/* item card (same as your inline styles) */
-.feedItem{
+.feedCard{
   display:grid;
   grid-template-columns:92px 1fr;
   gap:10px;
@@ -60,45 +37,42 @@
   border-radius:16px;
   background:rgba(255,255,255,0.55);
   align-items:center;
+  text-decoration:none;
+  color:inherit;
 }
 
-.feedThumbImg{
+.feedThumb{
   width:92px;
   height:64px;
   object-fit:cover;
   border-radius:12px;
   border:1px solid rgba(15,23,42,0.10);
-}
-
-.feedThumbPlaceholder{
-  width:92px;
-  height:64px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,0.10);
-  background:rgba(15,23,42,0.04);
-}
-
-.feedItem__content{
-  min-width:0;
-}
-
-/* title row */
-.feedTitleRow{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  min-width:0;
-}
-
-.feedTitleLink{
-  text-decoration:none;
-  color:inherit;
-  min-width:0;
-  flex:1;
   display:block;
 }
 
-.feedTitleText{
+.feedThumb--empty{
+  background:rgba(15,23,42,0.04);
+}
+
+.feedMeta{
+  min-width:0;
+}
+
+.feedTitleRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.feedQr{
+  width:16px;
+  height:16px;
+  border-radius:4px;
+  opacity:0.9;
+}
+
+.feedTitle{
   font-weight:900;
   color:rgba(15,23,42,0.80);
   font-size:13px;
@@ -107,17 +81,7 @@
   white-space:nowrap;
 }
 
-/* tiny QR next to title */
-.feedTinyQr{
-  width:18px;
-  height:18px;
-  border-radius:4px;
-  cursor:pointer;
-  opacity:0.75;
-}
-
-/* group title */
-.feedGroupTitle{
+.feedSource{
   margin-top:4px;
   font-size:12px;
   color:var(--muted);
@@ -126,27 +90,20 @@
   white-space:nowrap;
 }
 
-/* QR panel (collapsed by default) */
-.feedQrPanel{
-  display:none;
-  margin-top:10px;
-  gap:10px;
-  align-items:center;
+.feedEmpty{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background:rgba(255,255,255,0.55);
 }
 
-.feedQrPanel--open{
-  display:flex;
+.feedEmptyTitle{
+  font-weight:900;
+  color:rgba(15,23,42,0.75);
 }
 
-.feedQrBig{
-  width:110px;
-  height:110px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,0.10);
-  background:rgba(255,255,255,0.7);
-}
-
-.feedQrHint{
-  font-size:12px;
-  color:rgba(15,23,42,0.60);
+.feedEmptyText{
+  margin-top:6px;
+  font-size:13px;
+  color:var(--muted);
 }
