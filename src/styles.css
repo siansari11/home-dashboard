@@ -382,3 +382,34 @@ body{
 #tasks{
   overflow: auto;
 }
+/* =========================
+   HARD FIX: make the main grid truly 50/50
+   (your layout uses .grid, not .grid--2x2)
+   ========================= */
+
+.grid{
+  grid-template-columns: 1fr 1fr !important;   /* equal columns */
+  align-items: stretch !important;             /* cards stretch in row */
+}
+
+/* cards fill their grid cell consistently */
+.grid > .card{
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* prevents overflow squeezing other column */
+}
+
+/* make the inside blocks scroll instead of changing card heights */
+#agenda,
+#tasks{
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* keep Lifestyle/Food carousels compact and not forcing card height */
+.tileCarousel{
+  flex: 0 0 auto;
+}
