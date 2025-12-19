@@ -1,0 +1,55 @@
+/* src/styles/weather.css */
+
+.weatherRow{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+
+.weatherLeft{
+  display:flex;
+  flex-direction:column;
+}
+
+.weatherTemp{
+  font-size:42px;
+  font-weight:800;
+}
+
+.weatherMeta{
+  color:var(--muted);
+  font-size:13px;
+}
+
+.weatherRight{
+  display:flex;
+  flex-direction:column;
+  align-items:flex-end;
+  gap:8px;
+}
+
+.weatherLocPill{
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(120,214,182,0.25);
+  background:rgba(120,214,182,0.10);
+}
+
+.weatherMapWrap{
+  border-radius:14px;
+  overflow:hidden;
+  border:1px solid rgba(15,23,42,0.10);
+  background:rgba(255,255,255,0.55);
+}
+
+.weatherMapWrap--hidden{
+  display:none;
+}
+
+.weatherMapImg{
+  width:140px;
+  height:90px;
+  display:block;
+  object-fit:cover;
+}
