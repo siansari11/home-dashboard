@@ -1,5 +1,5 @@
 /* src/styles/tiles.css */
-/* Shared “poster tile” for Lifestyle + Food */
+/* Shared 2-up carousel tiles for Lifestyle + Food */
 
 .tileHeader{
   display:flex;
@@ -14,18 +14,34 @@
   color:var(--muted);
 }
 
-/* Stage = the single big tile area */
-.tileStage{
-  position:relative;
-  width:100%;
-  aspect-ratio: 16 / 10; /* looks great on tablets; tweak later if needed */
+/* Carousel strip */
+.tileCarousel{
+  --gap: 12px;
+  --perView: 2;              /* landscape default */
+  display:flex;
+  gap: var(--gap);
+  overflow-x:auto;
+  overflow-y:hidden;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 6px;       /* room for scrollbars on some browsers */
+}
+
+/* Portrait: show 1 tile per view (bigger, less cramped) */
+@media (orientation: portrait){
+  .tileCarousel{ --perView: 1; }
+}
+
+.tileItem{
+  flex: 0 0 calc((100% - (var(--gap) * (var(--perView) - 1))) / var(--perView));
+  scroll-snap-align: start;
   border-radius:16px;
   border:1px solid var(--line);
   background: rgba(255,255,255,0.55);
   overflow:hidden;
+  aspect-ratio: 16 / 11;
+  position:relative;
   box-shadow: 0 10px 28px rgba(2, 6, 23, 0.08);
-  touch-action: pan-y pan-x;
-  user-select:none;
 }
 
 .tileLink{
@@ -44,14 +60,13 @@
   transform: scale(1.02);
 }
 
-/* If no image, use a clean placeholder */
 .tilePlaceholder{
   width:100%;
   height:100%;
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:48px;
+  font-size:44px;
   color: rgba(15,23,42,0.55);
   background:
     radial-gradient(circle at 30% 20%, rgba(37,99,235,0.10), transparent 50%),
@@ -59,13 +74,12 @@
     rgba(255,255,255,0.55);
 }
 
-/* Overlay title strip */
 .tileOverlay{
   position:absolute;
   left:0;
   right:0;
   bottom:0;
-  padding:12px 12px 12px 12px;
+  padding:12px;
   background: linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.45));
 }
 
@@ -101,21 +115,4 @@
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
-}
-
-/* Gentle “flip” fade */
-.tileFadeOut{
-  animation: tileFadeOut 450ms ease-in-out both;
-}
-.tileFadeIn{
-  animation: tileFadeIn 550ms ease-in-out both;
-}
-
-@keyframes tileFadeOut{
-  from { opacity:1; transform: scale(1.00); }
-  to   { opacity:0; transform: scale(1.02); }
-}
-@keyframes tileFadeIn{
-  from { opacity:0; transform: scale(1.02); }
-  to   { opacity:1; transform: scale(1.00); }
 }
