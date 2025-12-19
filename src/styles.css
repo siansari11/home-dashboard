@@ -296,3 +296,20 @@ body{
     overflow: visible;
   }
 }
+/* Compact weather strip (so it doesn't push the grid off-screen) */
+.weatherStrip{
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  max-height: 120px;
+  overflow: hidden;
+}
+
+/* If your weather component has big numbers, this helps */
+.weatherStrip .weatherTemp{
+  font-size: 30px !important;
+  line-height: 1.05;
+}
+
+.weatherStrip .weatherMeta{
+  font-size: 12px !important;
+}
