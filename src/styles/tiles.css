@@ -1,5 +1,5 @@
 /* src/styles/tiles.css */
-/* Shared 2-up carousel tiles for Lifestyle + Food */
+/* Compact carousel tiles for Lifestyle + Food */
 
 .tileHeader{
   display:flex;
@@ -14,38 +14,86 @@
   color:var(--muted);
 }
 
+/* Nav buttons */
+.tileNav{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+.tileNavBtn{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,0.55);
+  color:rgba(15,23,42,0.70);
+  font-weight:900;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  cursor:pointer;
+  user-select:none;
+}
+
+.tileNavBtn:active{
+  transform: translateY(1px);
+}
+
+.tileNavIcon{
+  width:16px;
+  height:16px;
+  display:block;
+}
+
 /* Carousel strip */
 .tileCarousel{
   --gap: 12px;
   --perView: 2;              /* landscape default */
+
   display:flex;
   gap: var(--gap);
+
   overflow-x:auto;
   overflow-y:hidden;
+
   scroll-snap-type: x mandatory;
   -webkit-overflow-scrolling: touch;
-  padding-bottom: 6px;       /* room for scrollbars on some browsers */
+
+  padding-bottom: 6px;
+  touch-action: pan-y pan-x;
+
+  /* ✅ make it smaller */
+  height: 210px;             /* compact height */
+  align-items: stretch;
 }
 
-/* Portrait: show 1 tile per view (bigger, less cramped) */
+/* Portrait: 1 tile per view */
 @media (orientation: portrait){
-  .tileCarousel{ --perView: 1; }
+  .tileCarousel{
+    --perView: 1;
+    height: 220px;
+  }
 }
 
+/* Each tile = horizontal card */
 .tileItem{
   flex: 0 0 calc((100% - (var(--gap) * (var(--perView) - 1))) / var(--perView));
   scroll-snap-align: start;
+
   border-radius:16px;
   border:1px solid var(--line);
   background: rgba(255,255,255,0.55);
+
   overflow:hidden;
-  aspect-ratio: 16 / 11;
-  position:relative;
   box-shadow: 0 10px 28px rgba(2, 6, 23, 0.08);
+
+  height: 100%;
 }
 
 .tileLink{
-  display:block;
+  display:grid;
+  grid-template-columns: 34% 66%;
   width:100%;
   height:100%;
   color:inherit;
@@ -57,7 +105,11 @@
   height:100%;
   object-fit:cover;
   display:block;
-  transform: scale(1.02);
+}
+
+.tileImgWrap{
+  position:relative;
+  background: rgba(15,23,42,0.04);
 }
 
 .tilePlaceholder{
@@ -66,7 +118,7 @@
   display:flex;
   align-items:center;
   justify-content:center;
-  font-size:44px;
+  font-size:38px;
   color: rgba(15,23,42,0.55);
   background:
     radial-gradient(circle at 30% 20%, rgba(37,99,235,0.10), transparent 50%),
@@ -74,13 +126,16 @@
     rgba(255,255,255,0.55);
 }
 
-.tileOverlay{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  padding:12px;
-  background: linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.45));
+.tileBody{
+  padding:12px 12px;
+  display:flex;
+  flex-direction:column;
+  justify-content:space-between;
+  min-width:0;
+}
+
+.tileTop{
+  min-width:0;
 }
 
 .tileTitleRow{
@@ -100,19 +155,37 @@
 
 .tileTitle{
   font-weight:900;
-  color: rgba(255,255,255,0.92);
+  color: rgba(15,23,42,0.85);
   font-size:14px;
-  line-height:1.15;
+  line-height:1.18;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
 
 .tileSub{
-  margin-top:6px;
+  margin-top:8px;
   font-size:12px;
-  color: rgba(255,255,255,0.72);
+  color: rgba(15,23,42,0.55);
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
+}
+
+.tileDesc{
+  margin-top:8px;
+  font-size:12px;
+  color: rgba(15,23,42,0.70);
+  line-height:1.25;
+
+  display:-webkit-box;
+  -webkit-line-clamp: 3;      /* 3 lines */
+  -webkit-box-orient: vertical;
+  overflow:hidden;
+}
+
+.tileHint{
+  margin-top:10px;
+  font-size:11px;
+  color: rgba(15,23,42,0.45);
 }
