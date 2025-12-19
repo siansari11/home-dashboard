@@ -15,7 +15,6 @@ export async function renderFeed(el){
 
   function qrUrl(link){
     var data = encodeURIComponent(String(link || "").trim());
-    // small but scannable
     return "https://api.qrserver.com/v1/create-qr-code/?size=110x110&data=" + data;
   }
 
@@ -53,7 +52,7 @@ export async function renderFeed(el){
 
             '<div style="min-width:0;">' +
 
-              // Title (clickable)
+              // Title (clickable on desktop)
               '<a href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer" ' +
                  'style="text-decoration:none; color:inherit; display:block;">' +
                 '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:13px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
@@ -61,29 +60,20 @@ export async function renderFeed(el){
                 "</div>" +
               "</a>" +
 
-              // Group/subtitle
               '<div style="margin-top:4px; font-size:12px; color:var(--muted); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
                 escapeHtml(it.groupTitle || "") +
               "</div>" +
 
-              // Actions row
-              '<div style="margin-top:8px; display:flex; gap:8px; align-items:center;">' +
-
-                '<a href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer" ' +
-                   'style="text-decoration:none; font-size:12px; font-weight:800; padding:6px 10px; border-radius:12px; ' +
-                          'border:1px solid rgba(15,23,42,0.12); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.75);">' +
-                  'Open' +
-                "</a>" +
-
+              // QR action only
+              '<div style="margin-top:8px;">' +
                 '<button type="button" data-qr-btn="' + escapeAttr(id) + '" data-link="' + escapeAttr(it.link) + '" ' +
                    'style="font-size:12px; font-weight:800; padding:6px 10px; border-radius:12px; cursor:pointer; ' +
                           'border:1px solid rgba(15,23,42,0.12); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.75);">' +
                   "QR" +
                 "</button>" +
-
               "</div>" +
 
-              // QR panel (hidden by default)
+              // QR panel
               '<div id="' + escapeAttr(id) + '" style="display:none; margin-top:10px; gap:10px; align-items:center;">' +
                 '<img data-qr-img="' + escapeAttr(id) + '" alt="QR" ' +
                      'style="width:110px; height:110px; border-radius:12px; border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.7);" />' +
@@ -97,7 +87,7 @@ export async function renderFeed(el){
       html += "</div>";
       body.innerHTML = html;
 
-      // Wire up QR buttons
+      // Wire QR buttons
       var btns = body.querySelectorAll("[data-qr-btn]");
       for (var b = 0; b < btns.length; b++){
         btns[b].addEventListener("click", function(ev){
@@ -109,10 +99,10 @@ export async function renderFeed(el){
           var panel = body.querySelector("#" + CSS.escape(panelId));
           if (!panel) return;
 
-          var isOpen = panel.style.display !== "none";
-          panel.style.display = isOpen ? "none" : "flex";
+          var open = panel.style.display !== "none";
+          panel.style.display = open ? "none" : "flex";
 
-          if (!isOpen) {
+          if (!open) {
             var img = panel.querySelector('[data-qr-img="' + panelId + '"]');
             if (img && !img.getAttribute("src")) img.setAttribute("src", qrUrl(link));
           }
@@ -124,7 +114,9 @@ export async function renderFeed(el){
       body.innerHTML =
         '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
           '<div style="font-weight:900; color:rgba(15,23,42,0.75)">Feed failed to load</div>' +
-          '<div style="margin-top:8px; font-size:12px; white-space:pre-wrap;">' + escapeHtml(String(e && (e.stack || e))) + "</div>" +
+          '<div style="margin-top:8px; font-size:12px; white-space:pre-wrap;">' +
+            escapeHtml(String(e && (e.stack || e))) +
+          "</div>" +
         "</div>";
       status.textContent = "";
     }
@@ -132,7 +124,10 @@ export async function renderFeed(el){
 
   await refresh();
 
-  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
+  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs)
+    ? DASHBOARD_CONFIG.rss.refreshMs
+    : 10 * 60 * 1000;
+
   setInterval(refresh, refreshMs);
 }
 
