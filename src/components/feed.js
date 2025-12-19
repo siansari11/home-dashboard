@@ -8,7 +8,15 @@ export async function renderFeed(el){
   el.innerHTML = `
     <div class="tileHeader">
       <div class="pill">🏠 Lifestyle</div>
-      <div id="lifeStatus" class="tileStatus"></div>
+      <div class="tileNav">
+        <button id="lifePrev" class="tileNavBtn" aria-label="Previous">
+          ${arrowSvg("left")}
+        </button>
+        <button id="lifeNext" class="tileNavBtn" aria-label="Next">
+          ${arrowSvg("right")}
+        </button>
+        <div id="lifeStatus" class="tileStatus"></div>
+      </div>
     </div>
     <div id="lifeCarousel" class="tileCarousel" aria-label="Lifestyle carousel"></div>
   `;
@@ -22,86 +30,6 @@ export async function renderFeed(el){
 
   function perViewNow(){
     return window.matchMedia && window.matchMedia("(orientation: portrait)").matches ? 1 : 2;
-  }
-
-  function render(){
-    carousel.innerHTML = "";
-
-    if (!items.length){
-      var empty = document.createElement("div");
-      empty.className = "tileItem";
-      empty.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
-      carousel.appendChild(empty);
-      return;
-    }
-
-    for (var i = 0; i < items.length; i++){
-      var it = items[i];
-      var link = String(it.link || "");
-      if (!link) continue;
-
-      var title = String(it.title || "Lifestyle item");
-      var sub = String(it.groupTitle || "");
-      var img = String(it.image || "");
-      var qr = makeQrDataUrl(link, 80);
-
-      var tile = document.createElement("div");
-      tile.className = "tileItem";
-
-      tile.innerHTML = `
-        <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
-          ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">🏠</div>`}
-          <div class="tileOverlay">
-            <div class="tileTitleRow">
-              <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
-              <div class="tileTitle">${escapeHtml(title)}</div>
-            </div>
-            ${sub ? `<div class="tileSub">${escapeHtml(sub)}</div>` : ``}
-          </div>
-        </a>
-      `;
-
-      // if image fails, swap to placeholder
-      var imgEl = tile.querySelector(".tileImg");
-      if (imgEl){
-        imgEl.addEventListener("error", function(){
-          var wrap = this.closest(".tileItem");
-          if (!wrap) return;
-          var linkEl = wrap.querySelector(".tileLink");
-          if (!linkEl) return;
-          // replace image with placeholder, keep overlay
-          var overlay = wrap.querySelector(".tileOverlay");
-          linkEl.innerHTML = `<div class="tilePlaceholder">🏠</div>` + (overlay ? overlay.outerHTML : "");
-        }, { once:true });
-      }
-
-      carousel.appendChild(tile);
-    }
-  }
-
-  function scrollToIndex(nextIndex){
-    var tile = carousel.children[nextIndex];
-    if (!tile) return;
-    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-  }
-
-  function startAuto(){
-    stopAuto();
-    autoTimer = setInterval(function(){
-      if (!items.length) return;
-
-      var pv = perViewNow();
-      var firstVisible = getFirstVisibleIndex();
-      var next = firstVisible + pv;
-
-      if (next >= carousel.children.length) next = 0;
-      scrollToIndex(next);
-    }, rotateMs);
-  }
-
-  function stopAuto(){
-    if (autoTimer) clearInterval(autoTimer);
-    autoTimer = null;
   }
 
   function getFirstVisibleIndex(){
@@ -122,16 +50,112 @@ export async function renderFeed(el){
     return best;
   }
 
+  function scrollToIndex(nextIndex){
+    var tile = carousel.children[nextIndex];
+    if (!tile) return;
+    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
+  }
+
+  function nextPage(){
+    var pv = perViewNow();
+    var first = getFirstVisibleIndex();
+    var next = first + pv;
+    if (next >= carousel.children.length) next = 0;
+    scrollToIndex(next);
+  }
+
+  function prevPage(){
+    var pv = perViewNow();
+    var first = getFirstVisibleIndex();
+    var prev = first - pv;
+    if (prev < 0) prev = Math.max(0, carousel.children.length - pv);
+    scrollToIndex(prev);
+  }
+
+  function startAuto(){
+    stopAuto();
+    autoTimer = setInterval(function(){
+      if (!items.length) return;
+      nextPage();
+    }, rotateMs);
+  }
+
+  function stopAuto(){
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
+  }
+
   // pause auto while user interacts
   carousel.addEventListener("pointerdown", stopAuto);
   carousel.addEventListener("touchstart", stopAuto, { passive:true });
   carousel.addEventListener("pointerup", startAuto);
   carousel.addEventListener("touchend", startAuto);
 
-  // re-evaluate perView when orientation changes
-  window.addEventListener("resize", function(){
-    startAuto();
+  el.querySelector("#lifeNext").addEventListener("click", function(){
+    stopAuto(); nextPage(); startAuto();
   });
+  el.querySelector("#lifePrev").addEventListener("click", function(){
+    stopAuto(); prevPage(); startAuto();
+  });
+
+  window.addEventListener("resize", function(){ startAuto(); });
+
+  function render(){
+    carousel.innerHTML = "";
+
+    if (!items.length){
+      carousel.innerHTML = `<div class="tileItem"><div class="tilePlaceholder">🏠</div></div>`;
+      return;
+    }
+
+    for (var i = 0; i < items.length; i++){
+      var it = items[i];
+      var link = String(it.link || "");
+      if (!link) continue;
+
+      var title = String(it.title || "Lifestyle item");
+      var sub = String(it.groupTitle || "");
+      var img = String(it.image || "");
+      var desc = String(it.description || it.excerpt || "").trim();
+      var qr = makeQrDataUrl(link, 80);
+
+      var tile = document.createElement("div");
+      tile.className = "tileItem";
+
+      tile.innerHTML = `
+        <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
+          <div class="tileImgWrap">
+            ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">🏠</div>`}
+          </div>
+
+          <div class="tileBody">
+            <div class="tileTop">
+              <div class="tileTitleRow">
+                <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
+                <div class="tileTitle">${escapeHtml(title)}</div>
+              </div>
+
+              ${sub ? `<div class="tileSub">${escapeHtml(sub)}</div>` : ``}
+              ${desc ? `<div class="tileDesc">${escapeHtml(desc)}</div>` : ``}
+            </div>
+
+            <div class="tileHint">Swipe or use arrows</div>
+          </div>
+        </a>
+      `;
+
+      // image fallback
+      var imgEl = tile.querySelector(".tileImg");
+      if (imgEl){
+        imgEl.addEventListener("error", function(){
+          var wrap = this.closest(".tileImgWrap");
+          if (wrap) wrap.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
+        }, { once:true });
+      }
+
+      carousel.appendChild(tile);
+    }
+  }
 
   async function refresh(){
     status.textContent = "Updating…";
@@ -151,6 +175,14 @@ export async function renderFeed(el){
 
   var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
+}
+
+function arrowSvg(dir){
+  // Simple inline SVG string (not “inline styles”)
+  var d = dir === "left"
+    ? "M15 4 L7 12 L15 20"
+    : "M9 4 L17 12 L9 20";
+  return `<svg class="tileNavIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
 }
 
 function escapeHtml(s){
