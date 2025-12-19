@@ -313,3 +313,31 @@ body{
 .weatherStrip .weatherMeta{
   font-size: 12px !important;
 }
+/* =========================
+   FIX: short-height landscape should scroll the page
+   ========================= */
+@media (orientation: landscape) and (max-height: 700px){
+  body{ overflow: auto; }          /* allow page scroll */
+  .wrap{ height: auto; }           /* no forced 100vh */
+  .grid{ flex: 0 0 auto; min-height: auto; }
+
+  /* Grid rows can auto-size; cards don't trap overflow */
+  .grid.grid--2x2{
+    grid-template-rows: auto auto;
+    align-items: start;
+  }
+  .grid.grid--2x2 > .card{
+    height: auto;
+    overflow: visible;
+  }
+
+  /* Make weather extra compact in this mode */
+  .weatherStrip{
+    margin-bottom: 8px;
+    max-height: 88px;
+    padding: 8px 12px;
+  }
+
+  /* Make the Lifestyle/Food carousels a touch shorter */
+  .tileCarousel{ height: 180px; }
+}
