@@ -3,19 +3,12 @@
 
 export const FEED_GROUPS = [
   {
-    key: "recipes",
-    title: "Healthy High-Protein Recipes",
+    key: "lifestyle",
+    title: "Home & Lifestyle",
     urls: [
-      // Add more later if you want
-      "https://www.eatingwell.com/rss",
-      "https://www.skinnytaste.com/feed/",
-    ],
-  },
-  {
-    key: "apartment",
-    title: "Small Apartment & Decluttering",
-    urls: [
-      "https://rss.app/feeds/zX1l7Of5jKIdte7t.xml",
+      "https://www.thespruce.com/rss",
+      // Add more lifestyle sources later if you want:
+      // "https://www.apartmenttherapy.com/main.rss",
     ],
   },
 ];
