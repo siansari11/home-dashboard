@@ -1,187 +1,128 @@
 // src/components/reels.js
-import "../styles/tiles.css";
-import { FOOD_CONFIG } from "../config/reels.config.js";
-import { loadReels } from "../lib/reels.js";
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
+import { loadRssItems } from "../lib/rss.js";
 import { makeQrDataUrl } from "../lib/qr.js";
 
 export async function renderReels(el){
   el.innerHTML = `
-    <div class="tileHeader">
-      <div class="pill">🍽️ Food</div>
-      <div class="tileNav">
-        <button id="foodPrev" class="tileNavBtn" aria-label="Previous">
-          ${arrowSvg("left")}
-        </button>
-        <button id="foodNext" class="tileNavBtn" aria-label="Next">
-          ${arrowSvg("right")}
-        </button>
-        <div id="foodStatus" class="tileStatus"></div>
-      </div>
+    <div class="reelsHeader">
+      <div class="pill">🍲 Food</div>
+      <div id="reelsStatus" class="reelsStatus"></div>
     </div>
-    <div id="foodCarousel" class="tileCarousel" aria-label="Food carousel"></div>
+    <div id="reelsBody" class="reelsBody">Loading…</div>
   `;
 
-  var status = el.querySelector("#foodStatus");
-  var carousel = el.querySelector("#foodCarousel");
-
-  var items = [];
-  var autoTimer = null;
-  var rotateMs = 30 * 1000;
-
-  function perViewNow(){
-    return window.matchMedia && window.matchMedia("(orientation: portrait)").matches ? 1 : 2;
-  }
-
-  function getFirstVisibleIndex(){
-    var children = carousel.children;
-    if (!children.length) return 0;
-
-    var left = carousel.scrollLeft;
-    var best = 0;
-    var bestDist = Infinity;
-
-    for (var i = 0; i < children.length; i++){
-      var d = Math.abs(children[i].offsetLeft - left);
-      if (d < bestDist){
-        bestDist = d;
-        best = i;
-      }
-    }
-    return best;
-  }
-
-  function scrollToIndex(nextIndex){
-    var tile = carousel.children[nextIndex];
-    if (!tile) return;
-    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-  }
-
-  function nextPage(){
-    var pv = perViewNow();
-    var first = getFirstVisibleIndex();
-    var next = first + pv;
-    if (next >= carousel.children.length) next = 0;
-    scrollToIndex(next);
-  }
-
-  function prevPage(){
-    var pv = perViewNow();
-    var first = getFirstVisibleIndex();
-    var prev = first - pv;
-    if (prev < 0) prev = Math.max(0, carousel.children.length - pv);
-    scrollToIndex(prev);
-  }
-
-  function startAuto(){
-    stopAuto();
-    autoTimer = setInterval(function(){
-      if (!items.length) return;
-      nextPage();
-    }, rotateMs);
-  }
-
-  function stopAuto(){
-    if (autoTimer) clearInterval(autoTimer);
-    autoTimer = null;
-  }
-
-  carousel.addEventListener("pointerdown", stopAuto);
-  carousel.addEventListener("touchstart", stopAuto, { passive:true });
-  carousel.addEventListener("pointerup", startAuto);
-  carousel.addEventListener("touchend", startAuto);
-
-  el.querySelector("#foodNext").addEventListener("click", function(){
-    stopAuto(); nextPage(); startAuto();
-  });
-  el.querySelector("#foodPrev").addEventListener("click", function(){
-    stopAuto(); prevPage(); startAuto();
-  });
-
-  window.addEventListener("resize", function(){ startAuto(); });
-
-  function render(){
-    carousel.innerHTML = "";
-
-    var ph = (FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️";
-
-    if (!items.length){
-      carousel.innerHTML = `<div class="tileItem"><div class="tilePlaceholder">${escapeHtml(ph)}</div></div>`;
-      return;
-    }
-
-    for (var i = 0; i < items.length; i++){
-      var it = items[i];
-      var link = String(it.link || "");
-      if (!link) continue;
-
-      var title = String(it.title || "Food item");
-      var img = String(it.image || "");
-      var qr = makeQrDataUrl(link, 80);
-
-      var tile = document.createElement("div");
-      tile.className = "tileItem";
-
-      tile.innerHTML = `
-        <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
-          <div class="tileImgWrap">
-            ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">${escapeHtml(ph)}</div>`}
-          </div>
-
-          <div class="tileBody">
-            <div class="tileTop">
-              <div class="tileTitleRow">
-                <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
-                <div class="tileTitle">${escapeHtml(title)}</div>
-              </div>
-              <div class="tileSub">Swipe or use arrows</div>
-            </div>
-
-            <div class="tileHint">Tap opens the item</div>
-          </div>
-        </a>
-      `;
-
-      var imgEl = tile.querySelector(".tileImg");
-      if (imgEl){
-        imgEl.addEventListener("error", function(){
-          var wrap = this.closest(".tileImgWrap");
-          if (wrap) wrap.innerHTML = `<div class="tilePlaceholder">${escapeHtml(ph)}</div>`;
-        }, { once:true });
-      }
-
-      carousel.appendChild(tile);
-    }
-  }
+  const status = el.querySelector("#reelsStatus");
+  const body = el.querySelector("#reelsBody");
 
   async function refresh(){
     status.textContent = "Updating…";
-    try {
-      items = await loadReels();
-      status.textContent = items.length ? "Updated" : "";
-      render();
-      startAuto();
+
+    try{
+      // IMPORTANT: loadRssItems is already normalized by rss.js
+      // We just filter to "food" group items here.
+      const all = await loadRssItems();
+      const items = (all || []).filter(x => (x.groupKey || "").toLowerCase() === "food");
+
+      if (!items.length){
+        body.innerHTML = `
+          <div class="emptyCard">
+            <div class="emptyTitle">No food items found</div>
+            <div class="emptyText">
+              Check <code>src/config/feeds.js</code> and ensure the Food feeds are under group key <b>"food"</b>.
+            </div>
+          </div>
+        `;
+        status.textContent = "";
+        return;
+      }
+
+      // Show a scrollable list of “reel tiles”
+      const max = (DASHBOARD_CONFIG.rss?.maxItemsPerGroup) || 10;
+      const show = items.slice(0, max);
+
+      let html = `<div class="reelsList">`;
+
+      for (let i = 0; i < show.length; i++){
+        const it = show[i];
+
+        const link = String(it.link || "").trim();
+        const title = String(it.title || "Untitled").trim();
+        const desc = String(it.description || "").trim();
+
+        const img = pickBestImage(it);
+        const qr = link ? await makeQrDataUrl(link, 72) : "";
+
+        html += `
+          <div class="reelTile">
+            <div class="reelMedia">
+              ${
+                img
+                  ? `<img class="reelImg" src="${escapeAttr(img)}" alt="" loading="lazy" />`
+                  : `<div class="reelImgPlaceholder"></div>`
+              }
+            </div>
+
+            <div class="reelText">
+              <div class="reelTitle">${escapeHtml(title)}</div>
+              <div class="reelDesc">${escapeHtml(desc)}</div>
+
+              <div class="reelMetaRow">
+                <div class="reelSource">${escapeHtml(it.groupTitle || "Food")}</div>
+                ${
+                  qr
+                    ? `<img class="reelQr" src="${escapeAttr(qr)}" alt="QR" />`
+                    : ``
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      body.innerHTML = html;
+      status.textContent = "Updated";
     } catch (e) {
+      body.innerHTML = `
+        <div class="emptyCard">
+          <div class="emptyTitle">Food failed to load</div>
+          <div class="emptyText" style="white-space:pre-wrap">${escapeHtml(String(e?.stack || e))}</div>
+        </div>
+      `;
       status.textContent = "";
-      items = [];
-      render();
     }
   }
 
   await refresh();
-  startAuto();
+
+  const refreshMs = (DASHBOARD_CONFIG.rss?.refreshMs) || (10 * 60 * 1000);
+  setInterval(refresh, refreshMs);
 }
 
-function arrowSvg(dir){
-  var d = dir === "left"
-    ? "M15 4 L7 12 L15 20"
-    : "M9 4 L17 12 L9 20";
-  return `<svg class="tileNavIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+/** Try multiple common fields, because different RSS sources expose images differently */
+function pickBestImage(it){
+  // 1) Normalized by our rss.js (feed column used this)
+  if (it?.image) return it.image;
+
+  // 2) Common alternates
+  if (it?.thumbnail) return it.thumbnail;
+  if (it?.imageUrl) return it.imageUrl;
+
+  // 3) Some parsers store arrays
+  if (Array.isArray(it?.images) && it.images[0]) return it.images[0];
+
+  // 4) Some RSS provides enclosure URLs
+  if (it?.enclosure?.url) return it.enclosure.url;
+
+  return "";
 }
 
 function escapeHtml(s){
-  return String(s || "").replace(/[&<>"']/g, function (m) {
-    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
-  });
+  return String(s || "").replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#039;"
+  }[m]));
 }
 function escapeAttr(s){
   return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
