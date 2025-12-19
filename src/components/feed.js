@@ -1,6 +1,6 @@
 // src/components/feed.js
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadFeedItems } from "../lib/rss.js";
+import { loadRssItems } from "../lib/rss.js";
 
 export async function renderFeed(el){
   el.innerHTML =
