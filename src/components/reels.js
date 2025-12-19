@@ -10,53 +10,47 @@ export async function renderReels(el){
       <div class="pill">🍽️ Food</div>
       <div id="foodStatus" class="tileStatus"></div>
     </div>
-    <div id="foodStage" class="tileStage tileFadeIn"></div>
+    <div id="foodCarousel" class="tileCarousel" aria-label="Food carousel"></div>
   `;
 
   var status = el.querySelector("#foodStatus");
-  var stage = el.querySelector("#foodStage");
+  var carousel = el.querySelector("#foodCarousel");
 
   var items = [];
-  var idx = 0;
+  var autoTimer = null;
   var rotateMs = 30 * 1000;
-  var timer = null;
 
-  function safeTitle(it){
-    return (it && it.title) ? String(it.title) : "Food item";
-  }
-  function safeLink(it){
-    return (it && it.link) ? String(it.link) : "";
-  }
-  function safeImg(it){
-    return (it && it.image) ? String(it.image) : "";
+  function perViewNow(){
+    return window.matchMedia && window.matchMedia("(orientation: portrait)").matches ? 1 : 2;
   }
 
-  function renderCurrent(){
+  function render(){
+    carousel.innerHTML = "";
+
     if (!items.length){
-      stage.innerHTML = `<div class="tilePlaceholder">🍽️</div>`;
+      var empty = document.createElement("div");
+      empty.className = "tileItem";
+      empty.innerHTML = `<div class="tilePlaceholder">${escapeHtml((FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️")}</div>`;
+      carousel.appendChild(empty);
       return;
     }
 
-    var it = items[idx % items.length];
-    var link = safeLink(it);
-    var title = safeTitle(it);
-    var img = safeImg(it);
-    var qr = makeQrDataUrl(link, 80);
+    for (var i = 0; i < items.length; i++){
+      var it = items[i];
+      var link = String(it.link || "");
+      if (!link) continue;
 
-    stage.classList.remove("tileFadeIn");
-    stage.classList.add("tileFadeOut");
+      var title = String(it.title || "Food item");
+      var img = String(it.image || "");
+      var qr = makeQrDataUrl(link, 80);
+      var ph = (FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️";
 
-    setTimeout(function(){
-      stage.classList.remove("tileFadeOut");
-      stage.classList.add("tileFadeIn");
+      var tile = document.createElement("div");
+      tile.className = "tileItem";
 
-      stage.innerHTML = `
+      tile.innerHTML = `
         <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
-          ${
-            img
-              ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />`
-              : `<div class="tilePlaceholder">${escapeHtml((FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️")}</div>`
-          }
+          ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">${escapeHtml(ph)}</div>`}
           <div class="tileOverlay">
             <div class="tileTitleRow">
               <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
@@ -66,49 +60,71 @@ export async function renderReels(el){
         </a>
       `;
 
-      var imgEl = stage.querySelector(".tileImg");
+      var imgEl = tile.querySelector(".tileImg");
       if (imgEl){
         imgEl.addEventListener("error", function(){
-          stage.querySelector(".tileLink").innerHTML = `
-            <div class="tilePlaceholder">${escapeHtml((FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️")}</div>
-            <div class="tileOverlay">
-              <div class="tileTitleRow">
-                <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
-                <div class="tileTitle">${escapeHtml(title)}</div>
-              </div>
-            </div>
-          `;
+          var wrap = this.closest(".tileItem");
+          if (!wrap) return;
+          var linkEl = wrap.querySelector(".tileLink");
+          if (!linkEl) return;
+          var overlay = wrap.querySelector(".tileOverlay");
+          linkEl.innerHTML = `<div class="tilePlaceholder">${escapeHtml(ph)}</div>` + (overlay ? overlay.outerHTML : "");
         }, { once:true });
       }
-    }, 420);
+
+      carousel.appendChild(tile);
+    }
   }
 
-  function next(){
-    if (!items.length) return;
-    idx = (idx + 1) % items.length;
-    renderCurrent();
-  }
-
-  function prev(){
-    if (!items.length) return;
-    idx = (idx - 1 + items.length) % items.length;
-    renderCurrent();
+  function scrollToIndex(nextIndex){
+    var tile = carousel.children[nextIndex];
+    if (!tile) return;
+    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
   }
 
   function startAuto(){
     stopAuto();
-    timer = setInterval(next, rotateMs);
+    autoTimer = setInterval(function(){
+      if (!items.length) return;
+
+      var pv = perViewNow();
+      var firstVisible = getFirstVisibleIndex();
+      var next = firstVisible + pv;
+
+      if (next >= carousel.children.length) next = 0;
+      scrollToIndex(next);
+    }, rotateMs);
   }
 
   function stopAuto(){
-    if (timer) clearInterval(timer);
-    timer = null;
+    if (autoTimer) clearInterval(autoTimer);
+    autoTimer = null;
   }
 
-  wireSwipe(stage, function(dir){
-    stopAuto();
-    if (dir === "next") next();
-    else prev();
+  function getFirstVisibleIndex(){
+    var children = carousel.children;
+    if (!children.length) return 0;
+
+    var left = carousel.scrollLeft;
+    var best = 0;
+    var bestDist = Infinity;
+
+    for (var i = 0; i < children.length; i++){
+      var d = Math.abs(children[i].offsetLeft - left);
+      if (d < bestDist){
+        bestDist = d;
+        best = i;
+      }
+    }
+    return best;
+  }
+
+  carousel.addEventListener("pointerdown", stopAuto);
+  carousel.addEventListener("touchstart", stopAuto, { passive:true });
+  carousel.addEventListener("pointerup", startAuto);
+  carousel.addEventListener("touchend", startAuto);
+
+  window.addEventListener("resize", function(){
     startAuto();
   });
 
@@ -116,20 +132,13 @@ export async function renderReels(el){
     status.textContent = "Updating…";
     try {
       items = await loadReels();
-      idx = 0;
-
-      if (!items.length){
-        status.textContent = "";
-        stage.innerHTML = `<div class="tilePlaceholder">🍽️</div>`;
-        return;
-      }
-
-      status.textContent = "Updated";
-      renderCurrent();
+      status.textContent = items.length ? "Updated" : "";
+      render();
       startAuto();
     } catch (e) {
       status.textContent = "";
-      stage.innerHTML = `<div class="tilePlaceholder">⚠️</div>`;
+      items = [];
+      render();
     }
   }
 
@@ -137,43 +146,6 @@ export async function renderReels(el){
 
   var refreshMs = (FOOD_CONFIG && FOOD_CONFIG.refreshMs) ? FOOD_CONFIG.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
-}
-
-function wireSwipe(el, onDir){
-  var startX = 0, startY = 0, moved = false;
-  var active = false;
-
-  el.addEventListener("pointerdown", function(e){
-    active = true;
-    moved = false;
-    startX = e.clientX;
-    startY = e.clientY;
-  });
-
-  el.addEventListener("pointermove", function(e){
-    if (!active) return;
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) moved = true;
-  });
-
-  el.addEventListener("pointerup", function(e){
-    if (!active) return;
-    active = false;
-
-    var dx = e.clientX - startX;
-    var dy = e.clientY - startY;
-
-    var ax = Math.abs(dx), ay = Math.abs(dy);
-    var threshold = 32;
-
-    if (ax < threshold && ay < threshold) return;
-
-    if (moved) e.preventDefault();
-
-    if (ax >= ay) onDir(dx < 0 ? "next" : "prev");
-    else onDir(dy < 0 ? "next" : "prev");
-  });
 }
 
 function escapeHtml(s){
