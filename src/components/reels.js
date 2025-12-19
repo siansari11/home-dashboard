@@ -1,6 +1,6 @@
 // src/components/reels.js
 import "../styles/reels.css";
-import { REELS_CONFIG } from "../config/reels.config.js";
+import { FOOD_CONFIG } from "../config/reels.config.js";
 import { loadReels } from "../lib/reels.js";
 import { makeQrDataUrl } from "../lib/qr.js";
 
@@ -12,7 +12,7 @@ export async function renderReels(el){
 
   var pill = document.createElement("div");
   pill.className = "pill";
-  pill.textContent = "🎬 Reels";
+  pill.textContent = "🍽️ Food";
 
   var status = document.createElement("div");
   status.className = "reelsStatus";
@@ -33,7 +33,7 @@ export async function renderReels(el){
       var items = await loadReels();
 
       if (!items.length){
-        body.textContent = "No reels found (yet).";
+        body.textContent = "No food items found (yet).";
         status.textContent = "";
         return;
       }
@@ -57,7 +57,7 @@ export async function renderReels(el){
 
         var ph = document.createElement("div");
         ph.className = "reelsPlaceholder";
-        ph.textContent = (REELS_CONFIG && REELS_CONFIG.placeholderEmoji) ? REELS_CONFIG.placeholderEmoji : "🎬";
+        ph.textContent = (FOOD_CONFIG && FOOD_CONFIG.placeholderEmoji) ? FOOD_CONFIG.placeholderEmoji : "🍽️";
 
         if (it.image){
           var img = document.createElement("img");
@@ -68,7 +68,6 @@ export async function renderReels(el){
           img.src = it.image;
 
           img.onerror = function(){
-            // if image fails, show placeholder instead
             if (img && img.parentNode) {
               img.parentNode.innerHTML = "";
               img.parentNode.appendChild(ph.cloneNode(true));
@@ -93,7 +92,7 @@ export async function renderReels(el){
 
         var title = document.createElement("div");
         title.className = "reelsTitle";
-        title.textContent = it.title || "Instagram Reel";
+        title.textContent = it.title || "Food item";
 
         titleRow.append(qr, title);
         meta.appendChild(titleRow);
@@ -104,13 +103,13 @@ export async function renderReels(el){
 
       status.textContent = "Updated";
     } catch (e) {
-      body.textContent = "Reels failed to load.";
+      body.textContent = "Food failed to load.";
       status.textContent = "";
     }
   }
 
   await refresh();
 
-  var refreshMs = (REELS_CONFIG && REELS_CONFIG.refreshMs) ? REELS_CONFIG.refreshMs : 15 * 60 * 1000;
+  var refreshMs = (FOOD_CONFIG && FOOD_CONFIG.refreshMs) ? FOOD_CONFIG.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
 }
