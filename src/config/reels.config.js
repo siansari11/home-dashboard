@@ -3,7 +3,6 @@
 // ✅ “Food” column sources = instagram-style rss.app feeds + recipe rss feeds
 export const FOOD_RSS_URLS = [
   // --- your rss.app feeds (insta/reels style) ---
-  "https://rss.app/feeds/27hBehSavl2sLsAM.xml",
   "https://rss.app/feeds/peRsMzffKPMUvH0i.xml",
   "https://rss.app/feeds/1p7eRIJ3IbafIniz.xml",
   "https://rss.app/feeds/zJdNOAIhyefnGMux.xml",
