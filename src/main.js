@@ -12,13 +12,11 @@ document.querySelector("#app").innerHTML = `
   <div class="wrap">
     <header id="header"></header>
 
-    <!-- Weather strip -->
     <section class="card weatherStrip">
       <div id="weather">Loading…</div>
     </section>
 
     <div class="grid grid--2x2">
-      <!-- ROW 1 -->
       <section class="card">
         <h2>Next events</h2>
         <div id="agenda">Loading…</div>
@@ -29,14 +27,13 @@ document.querySelector("#app").innerHTML = `
         <div id="tasks">Loading…</div>
       </section>
 
-      <!-- ROW 2 -->
       <section class="card">
-        <h2>Home &amp; Lifestyle</h2>
+        <h2>Lifestyle</h2>
         <div id="feed">Loading…</div>
       </section>
 
       <section class="card">
-        <h2>Reels</h2>
+        <h2>Food</h2>
         <div id="reels">Loading…</div>
       </section>
     </div>
