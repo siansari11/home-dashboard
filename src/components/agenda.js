@@ -1,17 +1,34 @@
+// src/components/agenda.js
+import "../styles/agenda.css";
 import { getIcsUrl, setIcsUrl, loadUpcomingEvents } from "../lib/calendar.js";
 
 export async function renderAgenda(el){
-  el.innerHTML =
-    '<div style="display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:10px;">' +
-      '<div class="pill">📅 Calendar</div>' +
-      '<button id="calBtn" style="border:1px solid var(--line); background:rgba(255,255,255,0.55); color:var(--muted);' +
-             'border-radius:12px; padding:10px 12px; font-weight:800; font-size:13px">' +
-        (getIcsUrl() ? "Change link" : "Connect") +
-      "</button>" +
-    "</div>" +
-    '<div id="calBody" style="color:var(--muted)">Loading…</div>';
+  el.innerHTML = "";
 
-  el.querySelector("#calBtn").addEventListener("click", function () {
+  // Header row
+  var header = document.createElement("div");
+  header.className = "agendaHeader";
+
+  var pill = document.createElement("div");
+  pill.className = "pill";
+  pill.textContent = "📅 Calendar";
+
+  var btn = document.createElement("button");
+  btn.className = "agendaBtn";
+  btn.id = "calBtn";
+  btn.textContent = getIcsUrl() ? "Change link" : "Connect";
+
+  header.append(pill, btn);
+
+  // Body
+  var body = document.createElement("div");
+  body.className = "agendaBody";
+  body.id = "calBody";
+  body.textContent = "Loading…";
+
+  el.append(header, body);
+
+  btn.addEventListener("click", function () {
     var current = getIcsUrl();
     var next = prompt(
       "Paste your Google Calendar Secret iCal (.ics) link here.\n\nTip: keep it private (don’t put it in GitHub).",
@@ -22,16 +39,12 @@ export async function renderAgenda(el){
     renderAgenda(el);
   });
 
-  var body = el.querySelector("#calBody");
-
   if (!getIcsUrl()){
-    body.innerHTML =
-      '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
-        '<div style="font-weight:900; color:rgba(15,23,42,0.75)">Connect your calendar</div>' +
-        '<div style="margin-top:6px; font-size:13px;">' +
-          "Google Calendar → Settings → your calendar → Integrate calendar → “Secret address in iCal format”." +
-        "</div>" +
-      "</div>";
+    body.innerHTML = "";
+    body.appendChild(makeNotice(
+      "Connect your calendar",
+      "Google Calendar → Settings → your calendar → Integrate calendar → “Secret address in iCal format”."
+    ));
     return;
   }
 
@@ -39,13 +52,11 @@ export async function renderAgenda(el){
   try {
     result = await loadUpcomingEvents();
   } catch (err) {
-    body.innerHTML =
-      '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
-        '<div style="font-weight:900; color:rgba(15,23,42,0.75)">Calendar crashed</div>' +
-        '<div style="margin-top:8px; font-size:12px; color:var(--muted); white-space:pre-wrap;">' +
-          escapeHtml(String(err && (err.stack || err))) +
-        "</div>" +
-      "</div>";
+    body.innerHTML = "";
+    body.appendChild(makeError(
+      "Calendar crashed",
+      String(err && (err.stack || err))
+    ));
     return;
   }
 
@@ -53,21 +64,23 @@ export async function renderAgenda(el){
   var debug = (result && result.debug) ? result.debug : "";
 
   if (!events.length){
-    body.innerHTML =
-      '<div style="padding:12px; border:1px solid var(--line); border-radius:16px; background:rgba(255,255,255,0.55)">' +
-        '<div style="font-weight:900; color:rgba(15,23,42,0.75)">No events in the next 4 days</div>' +
-        '<div style="margin-top:6px; font-size:12px; white-space:pre-wrap;">' + escapeHtml(debug) + "</div>" +
-      "</div>";
+    body.innerHTML = "";
+    var n = makeNotice("No events in the next 4 days", debug || "");
+    n.classList.add("agendaNotice--mono");
+    body.appendChild(n);
     return;
   }
 
-  // Build routine maps ONCE per render (important)
+  // Build routine maps ONCE per render
   buildRoutineMaps(events);
 
   // Group by day
   var groups = groupByDay(events);
 
-  var html = '<div style="display:flex; flex-direction:column; gap:12px">';
+  body.innerHTML = "";
+  var wrap = document.createElement("div");
+  wrap.className = "agendaWrap";
+  body.appendChild(wrap);
 
   for (var gi = 0; gi < groups.length; gi++) {
     var g = groups[gi];
@@ -82,30 +95,47 @@ export async function renderAgenda(el){
       else rest.push(e);
     }
 
-    var routineLine = buildDailySummaryLine(routine);
+    var dayCard = document.createElement("div");
+    dayCard.className = "agendaDayCard";
 
-    html +=
-      '<div style="border:1px solid var(--line); border-radius:18px; background:rgba(255,255,255,0.55); overflow:hidden;">' +
-        '<div style="padding:10px 12px; background:rgba(255,255,255,0.55); border-bottom:1px solid var(--line);' +
-                    'display:flex; justify-content:space-between; align-items:center; gap:10px;">' +
-          '<div style="font-weight:900; color:rgba(15,23,42,0.78)">' + escapeHtml(g.label) + "</div>" +
-          '<div style="font-size:12px; color:var(--muted)">' +
-            rest.length + (rest.length === 1 ? " item" : " items") +
-          "</div>" +
-        "</div>" +
+    var dayHeader = document.createElement("div");
+    dayHeader.className = "agendaDayHeader";
 
-        (routineLine
-          ? '<div style="padding:10px 12px; border-bottom:1px solid rgba(15,23,42,0.08);">' +
-              '<div style="font-size:12px; color:var(--muted); font-weight:900; margin-bottom:6px;">Daily routine</div>' +
-              routineLine +
-            "</div>"
-          : ""
-        ) +
+    var dayTitle = document.createElement("div");
+    dayTitle.className = "agendaDayTitle";
+    dayTitle.textContent = g.label;
 
-        '<div style="display:flex; flex-direction:column;">';
+    var dayMeta = document.createElement("div");
+    dayMeta.className = "agendaDayMeta";
+    dayMeta.textContent = rest.length + (rest.length === 1 ? " item" : " items");
+
+    dayHeader.append(dayTitle, dayMeta);
+    dayCard.appendChild(dayHeader);
+
+    // Routine block (optional)
+    if (routine.length) {
+      var routineBlock = document.createElement("div");
+      routineBlock.className = "agendaRoutineBlock";
+
+      var routineLabel = document.createElement("div");
+      routineLabel.className = "agendaRoutineLabel";
+      routineLabel.textContent = "Daily routine";
+
+      var routineLine = buildDailySummaryLineNode(routine);
+
+      routineBlock.append(routineLabel, routineLine);
+      dayCard.appendChild(routineBlock);
+    }
+
+    // Events list
+    var list = document.createElement("div");
+    list.className = "agendaEventList";
 
     if (!rest.length){
-      html += '<div style="padding:12px; color:var(--muted); font-size:13px;">No one-off or non-daily items.</div>';
+      var empty = document.createElement("div");
+      empty.className = "agendaEmpty";
+      empty.textContent = "No one-off or non-daily items.";
+      list.appendChild(empty);
     } else {
       for (var ei = 0; ei < rest.length; ei++) {
         var e2 = rest[ei];
@@ -114,50 +144,48 @@ export async function renderAgenda(el){
         var isToday = (e2.start instanceof Date) && isSameDay(e2.start, new Date());
         var faded = isPast && isToday;
 
-        var bg = "transparent";
-        if (faded) bg = "rgba(15,23,42,0.04)";
-        else if (!e2._occ) bg = "rgba(37,99,235,0.08)";
+        var row = document.createElement("div");
+        row.className = "agendaEventRow";
+        if (ei > 0) row.classList.add("agendaEventRow--border");
+        if (faded) row.classList.add("agendaEventRow--faded");
+        if (!e2._occ) row.classList.add("agendaEventRow--nonRecurring"); // your previous blue tint
+
+        var time = document.createElement("div");
+        time.className = "agendaEventTime";
+        time.textContent = formatTime(e2);
+
+        var main = document.createElement("div");
+        main.className = "agendaEventMain";
+
+        var title = document.createElement("div");
+        title.className = "agendaEventTitle";
+        title.textContent = e2.summary || "Event";
+        if (faded) title.classList.add("agendaEventTitle--striked");
+
+        var loc = document.createElement("div");
+        loc.className = "agendaEventLoc";
+        loc.textContent = e2.location ? e2.location : "";
+
+        main.append(title, loc);
 
         var detailsId = registerEventForDetails(e2);
 
-        html +=
-          '<div style="display:grid; grid-template-columns:86px 1fr auto; gap:10px; padding:10px 12px; align-items:center;' +
-                      (ei === 0 ? "" : "border-top:1px solid rgba(15,23,42,0.08);") +
-                      "background:" + bg + ";" +
-                      (faded ? "opacity:0.60;" : "opacity:1;") +
-                 '">' +
+        var detailsBtn = document.createElement("button");
+        detailsBtn.className = "agendaDetailsBtn";
+        detailsBtn.setAttribute("data-details", detailsId);
+        detailsBtn.type = "button";
+        detailsBtn.textContent = "Details";
 
-            '<div style="font-weight:900; color:rgba(15,23,42,0.70); font-size:13px;">' +
-              escapeHtml(formatTime(e2)) +
-            "</div>" +
-
-            '<div style="min-width:0;">' +
-              '<div style="font-weight:900; color:rgba(15,23,42,0.80); font-size:14px;' +
-                          "overflow:hidden; text-overflow:ellipsis; white-space:nowrap;" +
-                          "text-decoration:" + (faded ? "line-through" : "none") + ";" +
-                   '">' +
-                escapeHtml(e2.summary || "Event") +
-              "</div>" +
-              '<div style="color:var(--muted); font-size:12px; margin-top:2px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">' +
-                (e2.location ? escapeHtml(e2.location) : "") +
-              "</div>" +
-            "</div>" +
-
-            '<button data-details="' + detailsId + '" style="border:1px solid var(--line); background:rgba(255,255,255,0.65); color:rgba(15,23,42,0.72);' +
-                   'border-radius:12px; padding:9px 10px; font-weight:900; font-size:13px; white-space:nowrap">' +
-              "Details" +
-            "</button>" +
-
-          "</div>";
+        row.append(time, main, detailsBtn);
+        list.appendChild(row);
       }
     }
 
-    html += "</div></div>";
+    dayCard.appendChild(list);
+    wrap.appendChild(dayCard);
   }
 
-  html += "</div>";
-  body.innerHTML = html;
-
+  // Details handler
   var btns = body.querySelectorAll("[data-details]");
   for (var b = 0; b < btns.length; b++) {
     btns[b].addEventListener("click", function (ev) {
@@ -175,13 +203,45 @@ export async function renderAgenda(el){
   }
 }
 
+/* ---------- UI helpers ---------- */
+
+function makeNotice(title, text){
+  var box = document.createElement("div");
+  box.className = "agendaNotice";
+
+  var t = document.createElement("div");
+  t.className = "agendaNotice__title";
+  t.textContent = title;
+
+  var p = document.createElement("div");
+  p.className = "agendaNotice__text";
+  p.textContent = text || "";
+
+  box.append(t, p);
+  return box;
+}
+
+function makeError(title, errorText){
+  var box = document.createElement("div");
+  box.className = "agendaNotice";
+
+  var t = document.createElement("div");
+  t.className = "agendaNotice__title";
+  t.textContent = title;
+
+  var e = document.createElement("div");
+  e.className = "agendaNotice__error";
+  e.textContent = errorText || "";
+
+  box.append(t, e);
+  return box;
+}
+
 /* ---------- Routine logic (title-only, behavior-based) ---------- */
 
 function buildRoutineMaps(events){
-  // Count distinct days per TITLE, collect time variants for display
-  var daySeen = {};   // titleKey|dayKey -> true
-  var counts = {};    // titleKey -> day count
-  var times = {};     // titleKey -> { "07:15":true, "09:30":true, ... }
+  var daySeen = {};
+  var counts = {};
 
   for (var i = 0; i < events.length; i++){
     var e = events[i];
@@ -197,14 +257,9 @@ function buildRoutineMaps(events){
       daySeen[combo] = true;
       counts[titleKey] = (counts[titleKey] || 0) + 1;
     }
-
-    var t = formatTime(e);
-    if (!times[titleKey]) times[titleKey] = {};
-    times[titleKey][t] = true;
   }
 
   window.__ROUTINE_COUNTS = counts;
-  window.__ROUTINE_TIMES = times;
 }
 
 function routineTitleKey(e){
@@ -214,54 +269,41 @@ function routineTitleKey(e){
 }
 
 function isRoutineByBehavior(e){
-  // Routine = appears on >= 2 distinct days in the 4-day window
-  // (this handles weekday+weekend split)
   if (!e || !(e.start instanceof Date) || isNaN(e.start)) return false;
-
   var key = routineTitleKey(e);
   if (!key) return false;
-
   var counts = window.__ROUTINE_COUNTS || {};
   return (counts[key] || 0) >= 2;
 }
 
- function buildDailySummaryLine(list){
-  if (!list || !list.length) return "";
+function buildDailySummaryLineNode(list){
+  var wrap = document.createElement("div");
+  wrap.className = "agendaRoutinePills";
 
-  // Sort by time so routine pills are in a nice order
+  // Sort by time
   list.sort(function(a,b){
     var ta = (a.start && a.start.getTime) ? a.start.getTime() : 0;
     var tb = (b.start && b.start.getTime) ? b.start.getTime() : 0;
     return ta - tb;
   });
 
-  // Deduplicate by TITLE for this day only (keep the first occurrence/time for that day)
+  // Deduplicate by TITLE for this day (keep first occurrence/time)
   var seen = {};
-  var pills = "";
-
   for (var i = 0; i < list.length; i++){
     var e = list[i];
     var key = routineTitleKey(e);
-    if (!key) continue;
-
-    if (seen[key]) continue;
+    if (!key || seen[key]) continue;
     seen[key] = true;
 
-    var t = formatTime(e);
-    var title = e.summary || "Routine";
+    var pill = document.createElement("span");
+    pill.className = "agendaRoutinePill";
+    pill.textContent = (e.summary || "Routine") + " at " + formatTime(e);
 
-    pills +=
-      '<span style="display:inline-block; margin:4px 6px 0 0; padding:6px 10px; border-radius:999px;' +
-                   'border:1px solid rgba(15,23,42,0.10); background:rgba(255,255,255,0.60);' +
-                   'font-size:12px; font-weight:900; color:rgba(15,23,42,0.72)">' +
-        escapeHtml( title + " at " + t ) +
-      "</span>";
+    wrap.appendChild(pill);
   }
 
-  return '<div style="display:flex; flex-wrap:wrap; align-items:center;">' + pills + "</div>";
- }
-
-
+  return wrap;
+}
 
 /* ---------- Details registry ---------- */
 
@@ -293,7 +335,6 @@ function groupByDay(events){
     map[key].items.push(e);
   }
 
-  // Keep each day's items ordered by time
   for (var g = 0; g < groups.length; g++){
     groups[g].items.sort(function(a,b){
       return (a.start && a.start.getTime ? a.start.getTime() : 0) - (b.start && b.start.getTime ? b.start.getTime() : 0);
@@ -328,9 +369,3 @@ function isSameDay(a, b){
 }
 
 function pad2(n){ return String(n).padStart(2, "0"); }
-
-function escapeHtml(s){
-  return String(s || "").replace(/[&<>"']/g, function (m) {
-    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
-  });
-}
