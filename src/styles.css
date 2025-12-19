@@ -146,8 +146,29 @@ a{ color: inherit; text-decoration:none; }
 .quotePunct{
   opacity: 0.9;
 }
-/* Make each column scroll when content is long (events / tasks / feed / reels) */
+/* =========================
+   Column scrolling (Cards scroll, not the whole page)
+   ========================= */
+
+.wrap{
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+header{
+  flex: 0 0 auto;
+}
+
+/* Grid takes the remaining height under header */
+.grid{
+  flex: 1 1 auto;
+  min-height: 0; /* critical for overflow to work inside children */
+}
+
+/* Each card becomes a scroll container */
 .card{
-  max-height: calc(100vh - 140px);
+  height: 100%;
+  min-height: 0;
   overflow: auto;
 }
