@@ -1,152 +1,202 @@
-/* src/styles/feed.css */
+// src/components/feed.js
+import "../styles/feed.css";
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
+import { loadRssItems } from "../lib/rss.js";
 
-/* header */
-.feedHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
+function qrUrl(link, size){
+  var data = encodeURIComponent(String(link || "").trim());
+  return "https://api.qrserver.com/v1/create-qr-code/?size=" + size + "&data=" + data;
 }
 
-.feedStatus{
-  font-size:12px;
-  color:var(--muted);
-}
+export async function renderFeed(el){
+  el.innerHTML = "";
 
-/* body default */
-.feedBody{
-  color:var(--muted);
-}
+  // Header
+  var header = document.createElement("div");
+  header.className = "feedHeader";
 
-/* list */
-.feedList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+  var pill = document.createElement("div");
+  pill.className = "pill";
+  pill.textContent = "📰 Feed";
 
-/* empty/error notice */
-.feedCardNotice{
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:rgba(255,255,255,0.55);
-}
+  var status = document.createElement("div");
+  status.id = "feedStatus";
+  status.className = "feedStatus";
 
-.feedCardNotice__title{
-  font-weight:900;
-  color:rgba(15,23,42,0.75);
-}
+  header.append(pill, status);
 
-.feedCardNotice__text{
-  margin-top:6px;
-  font-size:13px;
-}
+  // Body
+  var body = document.createElement("div");
+  body.id = "feedBody";
+  body.className = "feedBody";
+  body.textContent = "Loading…";
 
-.feedCardNotice__error{
-  margin-top:8px;
-  font-size:12px;
-  white-space:pre-wrap;
-}
+  el.append(header, body);
 
-/* item card (same as your inline styles) */
-.feedItem{
-  display:grid;
-  grid-template-columns:92px 1fr;
-  gap:10px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background:rgba(255,255,255,0.55);
-  align-items:center;
-}
+  function renderNotice(titleText, detailText, isError, errorRaw){
+    body.innerHTML = "";
 
-.feedThumbImg{
-  width:92px;
-  height:64px;
-  object-fit:cover;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,0.10);
-}
+    var box = document.createElement("div");
+    box.className = "feedCardNotice";
 
-.feedThumbPlaceholder{
-  width:92px;
-  height:64px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,0.10);
-  background:rgba(15,23,42,0.04);
-}
+    var t = document.createElement("div");
+    t.className = "feedCardNotice__title";
+    t.textContent = titleText;
 
-.feedItem__content{
-  min-width:0;
-}
+    box.appendChild(t);
 
-/* title row */
-.feedTitleRow{
-  display:flex;
-  align-items:center;
-  gap:6px;
-  min-width:0;
-}
+    if (detailText){
+      var p = document.createElement("div");
+      p.className = "feedCardNotice__text";
+      // allow a code tag if you passed one; otherwise plain text
+      p.innerHTML = detailText;
+      box.appendChild(p);
+    }
 
-.feedTitleLink{
-  text-decoration:none;
-  color:inherit;
-  min-width:0;
-  flex:1;
-  display:block;
-}
+    if (isError){
+      var err = document.createElement("div");
+      err.className = "feedCardNotice__error";
+      err.textContent = String(errorRaw || "");
+      box.appendChild(err);
+    }
 
-.feedTitleText{
-  font-weight:900;
-  color:rgba(15,23,42,0.80);
-  font-size:13px;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+    body.appendChild(box);
+  }
 
-/* tiny QR next to title */
-.feedTinyQr{
-  width:18px;
-  height:18px;
-  border-radius:4px;
-  cursor:pointer;
-  opacity:0.75;
-}
+  function makeItemCard(it, index){
+    var card = document.createElement("div");
+    card.className = "feedItem";
 
-/* group title */
-.feedGroupTitle{
-  margin-top:4px;
-  font-size:12px;
-  color:var(--muted);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
+    // Thumb
+    if (it.image){
+      var img = document.createElement("img");
+      img.className = "feedThumbImg";
+      img.alt = "";
+      img.loading = "lazy";
+      img.decoding = "async";
+      img.src = it.image;
+      card.appendChild(img);
+    } else {
+      var ph = document.createElement("div");
+      ph.className = "feedThumbPlaceholder";
+      card.appendChild(ph);
+    }
 
-/* QR panel (collapsed by default) */
-.feedQrPanel{
-  display:none;
-  margin-top:10px;
-  gap:10px;
-  align-items:center;
-}
+    // Content
+    var content = document.createElement("div");
+    content.className = "feedItem__content";
 
-.feedQrPanel--open{
-  display:flex;
-}
+    // Title row
+    var titleRow = document.createElement("div");
+    titleRow.className = "feedTitleRow";
 
-.feedQrBig{
-  width:110px;
-  height:110px;
-  border-radius:12px;
-  border:1px solid rgba(15,23,42,0.10);
-  background:rgba(255,255,255,0.7);
-}
+    var a = document.createElement("a");
+    a.className = "feedTitleLink";
+    a.href = it.link || "#";
+    a.target = "_blank";
+    a.rel = "noreferrer";
 
-.feedQrHint{
-  font-size:12px;
-  color:rgba(15,23,42,0.60);
+    var titleText = document.createElement("div");
+    titleText.className = "feedTitleText";
+    titleText.textContent = it.title || "(untitled)";
+
+    a.appendChild(titleText);
+
+    // Tiny QR icon
+    var tinyQr = document.createElement("img");
+    tinyQr.className = "feedTinyQr";
+    tinyQr.alt = "QR";
+    tinyQr.loading = "lazy";
+    tinyQr.decoding = "async";
+    tinyQr.src = qrUrl(it.link, "32x32");
+
+    titleRow.append(a, tinyQr);
+
+    // Group title
+    var group = document.createElement("div");
+    group.className = "feedGroupTitle";
+    group.textContent = it.groupTitle || "";
+
+    // QR panel
+    var panel = document.createElement("div");
+    panel.className = "feedQrPanel";
+
+    var bigQr = document.createElement("img");
+    bigQr.className = "feedQrBig";
+    bigQr.alt = "QR";
+
+    var hint = document.createElement("div");
+    hint.className = "feedQrHint";
+    hint.textContent = "Scan to open on phone";
+
+    panel.append(bigQr, hint);
+
+    // Toggle QR panel on tiny-QR click
+    tinyQr.addEventListener("click", function(ev){
+      ev.preventDefault();
+      ev.stopPropagation();
+
+      var open = panel.classList.contains("feedQrPanel--open");
+      if (open) {
+        panel.classList.remove("feedQrPanel--open");
+        return;
+      }
+
+      panel.classList.add("feedQrPanel--open");
+
+      // Only generate big QR when opened
+      if (!bigQr.src) bigQr.src = qrUrl(it.link, "110x110");
+    });
+
+    content.append(titleRow, group, panel);
+    card.appendChild(content);
+
+    return card;
+  }
+
+  async function refresh(){
+    status.textContent = "Updating…";
+
+    try {
+      var items = await loadRssItems();
+
+      if (!items || !items.length){
+        renderNotice(
+          "No feed items found",
+          'Try adding/changing feed URLs in <code>src/config/feeds.js</code>.',
+          false
+        );
+        status.textContent = "";
+        return;
+      }
+
+      body.innerHTML = "";
+
+      var list = document.createElement("div");
+      list.className = "feedList";
+
+      for (var i = 0; i < items.length; i++){
+        list.appendChild(makeItemCard(items[i], i));
+      }
+
+      body.appendChild(list);
+      status.textContent = "Updated";
+    } catch (e) {
+      renderNotice(
+        "Feed failed to load",
+        null,
+        true,
+        (e && (e.stack || e.message)) ? (e.stack || e.message) : String(e)
+      );
+      status.textContent = "";
+    }
+  }
+
+  await refresh();
+
+  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs)
+    ? DASHBOARD_CONFIG.rss.refreshMs
+    : 10 * 60 * 1000;
+
+  setInterval(refresh, refreshMs);
 }
