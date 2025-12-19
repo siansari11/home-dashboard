@@ -12,31 +12,29 @@ document.querySelector("#app").innerHTML = `
   <div class="wrap">
     <header id="header"></header>
 
-    <div class="grid grid--4">
-      <!-- COL 1: Weather + Events -->
-      <section class="card strong">
-        <h2>Weather</h2>
-        <div id="weather">Loading…</div>
+    <!-- Weather strip -->
+    <section class="card weatherStrip">
+      <div id="weather">Loading…</div>
+    </section>
 
-        <div class="spacer12"></div>
-
+    <div class="grid grid--2x2">
+      <!-- ROW 1 -->
+      <section class="card">
         <h2>Next events</h2>
         <div id="agenda">Loading…</div>
       </section>
 
-      <!-- COL 2: Tasks -->
       <section class="card">
         <h2>Tasks</h2>
         <div id="tasks">Loading…</div>
       </section>
 
-      <!-- COL 3: Feed -->
+      <!-- ROW 2 -->
       <section class="card">
-        <h2>Feed</h2>
+        <h2>Home &amp; Lifestyle</h2>
         <div id="feed">Loading…</div>
       </section>
 
-      <!-- COL 4: Reels -->
       <section class="card">
         <h2>Reels</h2>
         <div id="reels">Loading…</div>
