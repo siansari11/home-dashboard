@@ -1,0 +1,121 @@
+/* src/styles/tiles.css */
+/* Shared “poster tile” for Lifestyle + Food */
+
+.tileHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.tileStatus{
+  font-size:12px;
+  color:var(--muted);
+}
+
+/* Stage = the single big tile area */
+.tileStage{
+  position:relative;
+  width:100%;
+  aspect-ratio: 16 / 10; /* looks great on tablets; tweak later if needed */
+  border-radius:16px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,0.55);
+  overflow:hidden;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.08);
+  touch-action: pan-y pan-x;
+  user-select:none;
+}
+
+.tileLink{
+  display:block;
+  width:100%;
+  height:100%;
+  color:inherit;
+  text-decoration:none;
+}
+
+.tileImg{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  transform: scale(1.02);
+}
+
+/* If no image, use a clean placeholder */
+.tilePlaceholder{
+  width:100%;
+  height:100%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:48px;
+  color: rgba(15,23,42,0.55);
+  background:
+    radial-gradient(circle at 30% 20%, rgba(37,99,235,0.10), transparent 50%),
+    radial-gradient(circle at 70% 80%, rgba(120,214,182,0.12), transparent 55%),
+    rgba(255,255,255,0.55);
+}
+
+/* Overlay title strip */
+.tileOverlay{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  padding:12px 12px 12px 12px;
+  background: linear-gradient(180deg, rgba(0,0,0,0.00), rgba(0,0,0,0.45));
+}
+
+.tileTitleRow{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  min-width:0;
+}
+
+.tileQr{
+  width:18px;
+  height:18px;
+  border-radius:4px;
+  opacity:0.95;
+  flex:0 0 auto;
+}
+
+.tileTitle{
+  font-weight:900;
+  color: rgba(255,255,255,0.92);
+  font-size:14px;
+  line-height:1.15;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.tileSub{
+  margin-top:6px;
+  font-size:12px;
+  color: rgba(255,255,255,0.72);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+/* Gentle “flip” fade */
+.tileFadeOut{
+  animation: tileFadeOut 450ms ease-in-out both;
+}
+.tileFadeIn{
+  animation: tileFadeIn 550ms ease-in-out both;
+}
+
+@keyframes tileFadeOut{
+  from { opacity:1; transform: scale(1.00); }
+  to   { opacity:0; transform: scale(1.02); }
+}
+@keyframes tileFadeIn{
+  from { opacity:0; transform: scale(1.02); }
+  to   { opacity:1; transform: scale(1.00); }
+}
