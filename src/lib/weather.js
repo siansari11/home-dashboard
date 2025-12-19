@@ -1,8 +1,26 @@
-import { CONFIG } from '../config.js';
+// src/components/weather.js
+import "../styles/weather.css";
+import { CONFIG } from "../config.js";
+
+function buildOsmStaticMapUrl(lat, lon){
+  // Free static map provider (no key). If it ever rate-limits, we can swap providers later.
+  var center = String(lat) + "," + String(lon);
+  var params = new URLSearchParams({
+    center: center,
+    zoom: "11",
+    size: "140x90",
+    markers: center + ",red-pushpin"
+  });
+  return "https://staticmap.openstreetmap.de/staticmap.php?" + params.toString();
+}
 
 export async function renderWeather(el){
-  const { lat, lon, name } = CONFIG.location;
-  const url = new URL("https://api.open-meteo.com/v1/forecast");
+  var loc = (CONFIG && CONFIG.location) ? CONFIG.location : {};
+  var lat = loc.lat;
+  var lon = loc.lon;
+  var name = loc.name || "";
+
+  var url = new URL("https://api.open-meteo.com/v1/forecast");
   url.search = new URLSearchParams({
     latitude: lat,
     longitude: lon,
@@ -11,22 +29,67 @@ export async function renderWeather(el){
     forecast_days: "1"
   });
 
-  const res = await fetch(url);
-  const data = await res.json();
+  // Build UI shell first (so you always see something)
+  el.innerHTML = "";
 
-  const temp = Math.round(data.current.temperature_2m);
-  const wind = Math.round(data.current.wind_speed_10m);
-  const rain = data.hourly?.precipitation_probability?.[0];
+  var wrap = document.createElement("div");
+  wrap.className = "weatherRow";
 
-  el.innerHTML = `
-    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px">
-      <div>
-        <div style="font-size:42px; font-weight:800">${temp}°</div>
-        <div style="color:var(--muted); font-size:13px">Wind ${wind} km/h • Rain chance ${rain ?? "—"}%</div>
-      </div>
-      <div style="padding:8px 10px; border-radius:999px; border:1px solid rgba(120,214,182,0.25); background:rgba(120,214,182,0.10)">
-        📍 ${name}
-      </div>
-    </div>
-  `;
+  var left = document.createElement("div");
+  left.className = "weatherLeft";
+
+  var tempEl = document.createElement("div");
+  tempEl.className = "weatherTemp";
+  tempEl.textContent = "—°";
+
+  var metaEl = document.createElement("div");
+  metaEl.className = "weatherMeta";
+  metaEl.textContent = "Loading…";
+
+  left.append(tempEl, metaEl);
+
+  var right = document.createElement("div");
+  right.className = "weatherRight";
+
+  var pill = document.createElement("div");
+  pill.className = "weatherLocPill";
+  pill.textContent = "📍 " + name;
+
+  // Tiny map (only if lat/lon exist)
+  var mapWrap = document.createElement("div");
+  mapWrap.className = "weatherMapWrap";
+
+  var mapImg = document.createElement("img");
+  mapImg.className = "weatherMapImg";
+  mapImg.alt = "Map";
+  mapImg.loading = "lazy";
+  mapImg.decoding = "async";
+
+  if (typeof lat === "number" && typeof lon === "number") {
+    mapImg.src = buildOsmStaticMapUrl(lat, lon);
+    mapWrap.appendChild(mapImg);
+  } else {
+    mapWrap.classList.add("weatherMapWrap--hidden");
+  }
+
+  right.append(pill, mapWrap);
+
+  wrap.append(left, right);
+  el.appendChild(wrap);
+
+  // Fetch weather
+  try {
+    var res = await fetch(url);
+    var data = await res.json();
+
+    var temp = Math.round(data.current.temperature_2m);
+    var wind = Math.round(data.current.wind_speed_10m);
+    var rain = data.hourly?.precipitation_probability?.[0];
+
+    tempEl.textContent = temp + "°";
+    metaEl.textContent =
+      "Wind " + wind + " km/h • Rain chance " + ((rain === 0 || rain) ? rain : "—") + "%";
+  } catch (e) {
+    metaEl.textContent = "Weather failed to load";
+  }
 }
