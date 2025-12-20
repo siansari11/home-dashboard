@@ -17,10 +17,7 @@ export const FEED_GROUPS = [
     urls: [
       // Your Instagram / food RSS feeds
       "https://www.eatingwell.com/rss",
-      "https://www.skinnytaste.com/feed/",
-      "https://rss.app/feeds/27hBehSavl2sLsAM.xml",
-      "https://rss.app/feeds/peRsMzffKPMUvH0i.xml",
-      "https://rss.app/feeds/1p7eRIJ3IbafIniz.xml",
+      "https://www.skinnytaste.com/feed",
       "https://rss.app/feeds/zJdNOAIhyefnGMux.xml",
       "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
     ],
