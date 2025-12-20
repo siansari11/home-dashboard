@@ -1,129 +1,404 @@
-// src/components/reels.js
-import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadRssItems } from "../lib/rss.js";
-import { makeQrDataUrl } from "../lib/qr.js";
+:root{
+  --bg: #f4f6fb;
+  --text: #0f172a;
+  --muted: #475569;
+  --line: rgba(15, 23, 42, 0.10);
+  --panel: rgba(255,255,255,0.55);
+  --panel-strong: rgba(255,255,255,0.72);
+  --accent: #2563eb;
+  --radius: 22px;
+}
 
-export async function renderReels(el){
-  el.innerHTML = `
-    <div class="reelsHeader">
-      <div class="pill">🍲 Food</div>
-      <div id="reelsStatus" class="reelsStatus"></div>
-    </div>
-    <div id="reelsBody" class="reelsBody">Loading…</div>
-  `;
+*{ box-sizing:border-box; }
+html, body{ height:100%; }
 
-  const status = el.querySelector("#reelsStatus");
-  const body = el.querySelector("#reelsBody");
+body{
+  margin:0;
+  font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+  color: var(--text);
 
-  async function refresh(){
-    status.textContent = "Updating…";
+  background-image:
+    linear-gradient(180deg, rgba(20,25,40,0.35), rgba(244,246,251,0.85)),
+    url("/home-dashboard/bg.jpg");
 
-    try{
-      // IMPORTANT: loadRssItems is already normalized by rss.js
-      // We just filter to "food" group items here.
-      const all = await loadRssItems();
-      const items = (all || []).filter(x => (x.groupKey || "").toLowerCase() === "food");
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
 
-      if (!items.length){
-        body.innerHTML = `
-          <div class="emptyCard">
-            <div class="emptyTitle">No food items found</div>
-            <div class="emptyText">
-              Check <code>src/config/feeds.js</code> and ensure the Food feeds are under group key <b>"food"</b>.
-            </div>
-          </div>
-        `;
-        status.textContent = "";
-        return;
-      }
+  overflow: hidden; /* kiosk default: cards scroll, not the page */
+}
 
-      // Show a scrollable list of “reel tiles”
-      const max = (DASHBOARD_CONFIG.rss?.maxItemsPerGroup) || 10;
-      const show = items.slice(0, max);
+.wrap{
+  padding:18px;
+  max-width:1280px;
+  margin:0 auto;
 
-      let html = `<div class="reelsList">`;
+  height: 100vh;
+  display:flex;
+  flex-direction:column;
+  min-height:0;
+}
 
-      for (let i = 0; i < show.length; i++){
-        const it = show[i];
+header{
+  flex:0 0 auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  padding: 8px 4px 14px 4px;
+}
 
-        const link = String(it.link || "").trim();
-        const title = String(it.title || "Untitled").trim();
-        const desc = String(it.description || "").trim();
+/* ✅ MAIN LAYOUT: 2×2 only (stable) */
+.grid{
+  flex: 1 1 auto;
+  min-height: 0;
 
-        const img = pickBestImage(it);
-        const qr = link ? await makeQrDataUrl(link, 72) : "";
+  display:grid;
+  grid-template-columns: 1fr 1fr;
+  grid-template-rows: 1fr 1fr;
+  gap:14px;
+  align-items: stretch;
+}
 
-        html += `
-          <div class="reelTile">
-            <div class="reelMedia">
-              ${
-                img
-                  ? `<img class="reelImg" src="${escapeAttr(img)}" alt="" loading="lazy" />`
-                  : `<div class="reelImgPlaceholder"></div>`
-              }
-            </div>
+/* Cards fill their cell and scroll internally */
+.card{
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 14px;
+  box-shadow: 0 10px 28px rgba(2, 6, 23, 0.10);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 
-            <div class="reelText">
-              <div class="reelTitle">${escapeHtml(title)}</div>
-              <div class="reelDesc">${escapeHtml(desc)}</div>
+  min-height:0;
+  overflow:auto;
+  -webkit-overflow-scrolling: touch;
 
-              <div class="reelMetaRow">
-                <div class="reelSource">${escapeHtml(it.groupTitle || "Food")}</div>
-                ${
-                  qr
-                    ? `<img class="reelQr" src="${escapeAttr(qr)}" alt="QR" />`
-                    : ``
-                }
-              </div>
-            </div>
-          </div>
-        `;
-      }
+  display:flex;
+  flex-direction:column;
+}
 
-      html += `</div>`;
-      body.innerHTML = html;
-      status.textContent = "Updated";
-    } catch (e) {
-      body.innerHTML = `
-        <div class="emptyCard">
-          <div class="emptyTitle">Food failed to load</div>
-          <div class="emptyText" style="white-space:pre-wrap">${escapeHtml(String(e?.stack || e))}</div>
-        </div>
-      `;
-      status.textContent = "";
-    }
+.card.strong{ background: var(--panel-strong); }
+
+h2{
+  margin:0 0 10px 0;
+  font-size: 13px;
+  color: var(--muted);
+  font-weight: 800;
+  letter-spacing: .10em;
+  text-transform: uppercase;
+}
+
+a{ color: inherit; text-decoration:none; }
+
+.pill{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid var(--line);
+  background: rgba(255,255,255,0.55);
+  color: var(--muted);
+  font-size: 13px;
+  white-space:nowrap;
+}
+
+/* ✅ Replace inline spacer */
+.spacer12{ height:12px; }
+
+/* =========================
+   Quotes animations (keep)
+   ========================= */
+.quoteLine.quoteAnimate{ animation: quoteIn 700ms ease-out both; }
+
+@keyframes quoteIn{
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quoteBlock.quoteOut{ animation: quoteFadeOut 1800ms ease-in-out both; }
+.quoteBlock.quoteIn{  animation: quoteFadeIn 2200ms ease-in-out both; }
+
+@keyframes quoteFadeOut{
+  from { opacity: 1; transform: translateY(0); }
+  to   { opacity: 0; transform: translateY(-8px); }
+}
+@keyframes quoteFadeIn{
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.quoteWord{
+  display:inline-block;
+  opacity:0;
+  transform: translateY(10px);
+  animation: wordIn 1500ms ease-in-out both;
+}
+
+@keyframes wordIn{
+  from { opacity: 0; transform: translateY(10px); filter: blur(1px); }
+  to   { opacity: 1; transform: translateY(0); filter: blur(0px); }
+}
+
+.quotePunct{ opacity: 0.9; }
+
+/* =========================
+   Weather strip sizing (compact)
+   ========================= */
+.weatherStrip{
+  width:100%;
+  padding: 10px 14px;
+  margin-bottom: 12px;
+  max-height: 120px;
+  overflow:hidden;
+}
+
+/* If present in markup */
+.weatherStrip .weatherTemp{
+  font-size: 30px;
+  line-height: 1.05;
+}
+.weatherStrip .weatherMeta{
+  font-size: 12px;
+}
+
+/* =========================
+   Allow page scroll on short landscape screens (your screenshot case)
+   ========================= */
+@media (orientation: landscape) and (max-height: 700px){
+  body{ overflow:auto; }
+  .wrap{ height:auto; min-height: 100vh; }
+  .grid{
+    grid-template-rows: auto auto;
   }
-
-  await refresh();
-
-  const refreshMs = (DASHBOARD_CONFIG.rss?.refreshMs) || (10 * 60 * 1000);
-  setInterval(refresh, refreshMs);
+  .card{
+    height:auto;
+    overflow: visible;
+  }
 }
 
-/** Try multiple common fields, because different RSS sources expose images differently */
-function pickBestImage(it){
-  // 1) Normalized by our rss.js (feed column used this)
-  if (it?.image) return it.image;
-
-  // 2) Common alternates
-  if (it?.thumbnail) return it.thumbnail;
-  if (it?.imageUrl) return it.imageUrl;
-
-  // 3) Some parsers store arrays
-  if (Array.isArray(it?.images) && it.images[0]) return it.images[0];
-
-  // 4) Some RSS provides enclosure URLs
-  if (it?.enclosure?.url) return it.enclosure.url;
-
-  return "";
+/* =========================
+   Portrait phones: stack
+   ========================= */
+@media (max-width: 980px) and (orientation: portrait){
+  body{ overflow:auto; }
+  .wrap{ height:auto; min-height: 100vh; }
+  .grid{
+    grid-template-columns: 1fr;
+    grid-template-rows: auto;
+  }
+  .card{
+    height:auto;
+    overflow: visible;
+  }
+}
+/* Weather row layout (icon + temp + meta + location) */
+.weatherRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
 }
 
-function escapeHtml(s){
-  return String(s || "").replace(/[&<>"']/g, (m) => ({
-    "&":"&amp;","<":"&lt;",">":"&gt;",
-    '"':"&quot;","'":"&#039;"
-  }[m]));
+.weatherIconWrap{
+  flex:0 0 auto;
+  display:flex;
+  align-items:center;
 }
-function escapeAttr(s){
-  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
+
+.weatherIcon{
+  width:64px;
+  height:64px;
+  object-fit:contain;
+}
+
+.weatherMain{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.weatherLoc{
+  flex:0 0 auto;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.20);
+  background: rgba(255,255,255,0.16);
+  color: rgba(255,255,255,0.85);
+  font-size: 12px;
+}
+/* Weather card is full width and separate from the 2x2 grid */
+.weatherCard{
+  margin-bottom: 14px;
+}
+
+/* 2x2 grid is ALWAYS equal columns */
+.grid.grid--2x2{
+  grid-template-columns: 1fr 1fr !important;
+}
+.weatherRow{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.weatherIcon{
+  width:64px;
+  height:64px;
+  object-fit:contain;
+}
+
+.weatherMain{
+  flex:1 1 auto;
+  min-width:0;
+}
+
+.weatherTemp{
+  font-size: 34px;
+  line-height: 1.05;
+}
+
+.weatherMeta{
+  font-size: 12px;
+  color: rgba(15,23,42,0.60);
+  white-space: nowrap;
+}
+
+.weatherLoc{
+  flex:0 0 auto;
+  padding:8px 10px;
+  border-radius:999px;
+  border:1px solid rgba(255,255,255,0.20);
+  background: rgba(255,255,255,0.16);
+  color: rgba(15,23,42,0.70);
+  font-size: 12px;
+}
+/* ========= Food/Reels UI ========= */
+.reelsHeader{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+
+.reelsStatus{
+  font-size:12px;
+  color: var(--muted);
+}
+
+.reelsBody{
+  color: var(--muted);
+}
+
+.reelsList{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.reelTile{
+  display:grid;
+  grid-template-columns: 110px 1fr;
+  gap:10px;
+  padding:10px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background: rgba(255,255,255,0.55);
+  align-items:stretch;
+}
+
+.reelMedia{
+  width:110px;
+  height:78px;
+  border-radius:12px;
+  overflow:hidden;
+  background: rgba(15,23,42,0.04);
+  border: 1px solid rgba(15,23,42,0.10);
+}
+
+.reelImg{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+.reelImgPlaceholder{
+  width:100%;
+  height:100%;
+  background: rgba(15,23,42,0.06);
+}
+
+.reelText{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.reelTitle{
+  font-weight:900;
+  color: rgba(15,23,42,0.82);
+  font-size:13px;
+  line-height:1.18;
+
+  /* show title fully (wrap), but limit to 3 lines */
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:3;
+  overflow:hidden;
+}
+
+.reelDesc{
+  font-size:12px;
+  color: var(--muted);
+
+  /* clamp description harder than title */
+  display:-webkit-box;
+  -webkit-box-orient:vertical;
+  -webkit-line-clamp:2;
+  overflow:hidden;
+}
+
+.reelMetaRow{
+  margin-top:auto;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+}
+
+.reelSource{
+  font-size:12px;
+  color: var(--muted);
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+}
+
+.reelQr{
+  width:28px;
+  height:28px;
+  border-radius:6px;
+  opacity:0.95;
+}
+
+/* Empty card style (matches your glass look) */
+.emptyCard{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background: rgba(255,255,255,0.55);
+}
+
+.emptyTitle{
+  font-weight:900;
+  color: rgba(15,23,42,0.75);
+}
+
+.emptyText{
+  margin-top:6px;
+  font-size:13px;
+  color: var(--muted);
 }
