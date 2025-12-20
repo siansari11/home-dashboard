@@ -4,15 +4,18 @@ import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 import { FEED_GROUPS } from "../config/feeds.js";
 
 /**
- * Public API used by Feed + Reels.
  * Returns normalized items:
  * { title, link, description, image, date, groupKey, groupTitle }
+ *
+ * IMPORTANT:
+ * - Runs in browser only
+ * - Adds timeouts so dashboard never hangs
+ * - Fetches feeds in parallel so one slow feed doesn't block all
  */
 export async function loadRssItems() {
   const cfg = DASHBOARD_CONFIG?.rss || {};
   const enabled = Array.isArray(cfg.enabledGroups) ? cfg.enabledGroups : null;
 
-  // If enabledGroups is set, only load those groups; otherwise load all groups in feeds.js
   const groups = (FEED_GROUPS || []).filter((g) => {
     if (!enabled) return true;
     return enabled.includes(g.key);
@@ -21,32 +24,38 @@ export async function loadRssItems() {
   const maxTotal = Number(cfg.maxItemsTotal || 12);
   const maxPerGroup = Number(cfg.maxItemsPerGroup || 8);
 
-  const all = [];
+  // Per-feed timeout (prevents "Loading…" forever)
+  const perFeedTimeoutMs = Number(cfg.perFeedTimeoutMs || 8000);
 
-  for (let gi = 0; gi < groups.length; gi++) {
-    const g = groups[gi];
-    const urls = Array.isArray(g.urls) ? g.urls : [];
-    let groupItems = [];
+  const groupResults = await Promise.allSettled(
+    groups.map(async (g) => {
+      const urls = Array.isArray(g.urls) ? g.urls : [];
+      const perUrl = await Promise.allSettled(
+        urls.map(async (url) => {
+          const xml = await fetchXmlWithFallback(String(url || "").trim(), perFeedTimeoutMs);
+          if (!xml) return [];
+          return parseRssXml(xml, g.key, g.title);
+        })
+      );
 
-    for (let ui = 0; ui < urls.length; ui++) {
-      const url = String(urls[ui] || "").trim();
-      if (!url) continue;
+      // Flatten successful url-results
+      let items = [];
+      for (let i = 0; i < perUrl.length; i++) {
+        if (perUrl[i].status === "fulfilled") items = items.concat(perUrl[i].value || []);
+      }
 
-      const xmlText = await fetchXmlWithFallback(url);
-      if (!xmlText) continue;
+      // Sort newest first, limit per group
+      items.sort((a, b) => (b.date || 0) - (a.date || 0));
+      items = items.slice(0, maxPerGroup);
 
-      const parsed = parseRssXml(xmlText, g.key, g.title);
-      groupItems = groupItems.concat(parsed);
-      if (groupItems.length >= maxPerGroup) break;
-    }
+      return items;
+    })
+  );
 
-    // Sort newest first if date exists
-    groupItems.sort((a, b) => (b.date || 0) - (a.date || 0));
-
-    // Limit per group
-    groupItems = groupItems.slice(0, maxPerGroup);
-
-    all.push(...groupItems);
+  // Flatten successful group-results
+  let all = [];
+  for (let i = 0; i < groupResults.length; i++) {
+    if (groupResults[i].status === "fulfilled") all = all.concat(groupResults[i].value || []);
   }
 
   // Global sort + limit
@@ -54,14 +63,14 @@ export async function loadRssItems() {
   return all.slice(0, maxTotal);
 }
 
-async function fetchXmlWithFallback(url) {
-  // Try direct fetch first
-  try {
-    const r = await fetch(url, { cache: "no-store" });
-    if (r.ok) return await r.text();
-  } catch {}
+async function fetchXmlWithFallback(url, timeoutMs) {
+  if (!url) return null;
 
-  // Then try proxies from CONFIG (if present)
+  // Try direct
+  const direct = await fetchWithTimeout(url, timeoutMs);
+  if (direct.ok) return direct.text;
+
+  // Try proxies from CONFIG (if present)
   const proxyFns = [];
   if (Array.isArray(CONFIG?.corsProxies) && CONFIG.corsProxies.length) proxyFns.push(...CONFIG.corsProxies);
   else if (typeof CONFIG?.corsProxy === "function") proxyFns.push(CONFIG.corsProxy);
@@ -69,13 +78,27 @@ async function fetchXmlWithFallback(url) {
   for (let i = 0; i < proxyFns.length; i++) {
     try {
       const proxied = proxyFns[i](url);
-      const r = await fetch(proxied, { cache: "no-store" });
-      if (!r.ok) continue;
-      return await r.text();
+      const r = await fetchWithTimeout(proxied, timeoutMs);
+      if (r.ok) return r.text;
     } catch {}
   }
 
   return null;
+}
+
+async function fetchWithTimeout(url, timeoutMs) {
+  const controller = new AbortController();
+  const t = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, { cache: "no-store", signal: controller.signal });
+    const text = await res.text();
+    return { ok: res.ok, text };
+  } catch {
+    return { ok: false, text: null };
+  } finally {
+    clearTimeout(t);
+  }
 }
 
 function parseRssXml(xmlText, groupKey, groupTitle) {
@@ -94,27 +117,26 @@ function parseRssXml(xmlText, groupKey, groupTitle) {
 
     const title = text(it, "title") || "Untitled";
     const link = (text(it, "link") || "").trim();
-    const description = (text(it, "description") || text(it, "content\\:encoded") || "").trim();
+    const descriptionRaw = (text(it, "description") || text(it, "content\\:encoded") || "").trim();
 
     const pub = (text(it, "pubDate") || text(it, "dc\\:date") || "").trim();
     const date = pub ? Date.parse(pub) : 0;
 
-    // Best-effort image extraction
     const image =
       attr(it, "media\\:content", "url") ||
       attr(it, "media\\:thumbnail", "url") ||
       attr(it, "enclosure", "url") ||
-      firstImgFromHtml(description) ||
+      firstImgFromHtml(descriptionRaw) ||
       "";
 
     out.push({
       title,
       link,
-      description: stripHtml(description),
+      description: stripHtml(descriptionRaw),
       image,
       date: isNaN(date) ? 0 : date,
-      groupKey: String(groupKey || "").toLowerCase(),     // ✅ ALWAYS set
-      groupTitle: String(groupTitle || "").trim()         // ✅ ALWAYS set
+      groupKey: String(groupKey || "").toLowerCase(),  // ✅ tagging for filtering
+      groupTitle: String(groupTitle || "").trim(),
     });
   }
 
