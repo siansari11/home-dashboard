@@ -4,13 +4,8 @@ import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 import { FEED_GROUPS } from "../config/feeds.js";
 
 /**
- * Returns normalized items:
+ * Normalized items:
  * { title, link, description, image, date, groupKey, groupTitle }
- *
- * IMPORTANT:
- * - Runs in browser only
- * - Adds timeouts so dashboard never hangs
- * - Fetches feeds in parallel so one slow feed doesn't block all
  */
 export async function loadRssItems() {
   const cfg = DASHBOARD_CONFIG?.rss || {};
@@ -24,53 +19,50 @@ export async function loadRssItems() {
   const maxTotal = Number(cfg.maxItemsTotal || 12);
   const maxPerGroup = Number(cfg.maxItemsPerGroup || 8);
 
-  // Per-feed timeout (prevents "Loading…" forever)
+  // ✅ new: prevents hanging forever
   const perFeedTimeoutMs = Number(cfg.perFeedTimeoutMs || 8000);
 
-  const groupResults = await Promise.allSettled(
+  // Fetch all groups in parallel
+  const groupSettled = await Promise.allSettled(
     groups.map(async (g) => {
       const urls = Array.isArray(g.urls) ? g.urls : [];
-      const perUrl = await Promise.allSettled(
-        urls.map(async (url) => {
-          const xml = await fetchXmlWithFallback(String(url || "").trim(), perFeedTimeoutMs);
+
+      // Fetch all urls in parallel too
+      const urlSettled = await Promise.allSettled(
+        urls.map(async (u) => {
+          const url = String(u || "").trim();
+          if (!url) return [];
+          const xml = await fetchXmlWithFallback(url, perFeedTimeoutMs);
           if (!xml) return [];
           return parseRssXml(xml, g.key, g.title);
         })
       );
 
-      // Flatten successful url-results
       let items = [];
-      for (let i = 0; i < perUrl.length; i++) {
-        if (perUrl[i].status === "fulfilled") items = items.concat(perUrl[i].value || []);
+      for (let i = 0; i < urlSettled.length; i++) {
+        if (urlSettled[i].status === "fulfilled") items = items.concat(urlSettled[i].value || []);
       }
 
-      // Sort newest first, limit per group
       items.sort((a, b) => (b.date || 0) - (a.date || 0));
-      items = items.slice(0, maxPerGroup);
-
-      return items;
+      return items.slice(0, maxPerGroup);
     })
   );
 
-  // Flatten successful group-results
   let all = [];
-  for (let i = 0; i < groupResults.length; i++) {
-    if (groupResults[i].status === "fulfilled") all = all.concat(groupResults[i].value || []);
+  for (let i = 0; i < groupSettled.length; i++) {
+    if (groupSettled[i].status === "fulfilled") all = all.concat(groupSettled[i].value || []);
   }
 
-  // Global sort + limit
   all.sort((a, b) => (b.date || 0) - (a.date || 0));
   return all.slice(0, maxTotal);
 }
 
 async function fetchXmlWithFallback(url, timeoutMs) {
-  if (!url) return null;
+  // direct first
+  const direct = await fetchTextTimeout(url, timeoutMs);
+  if (direct) return direct;
 
-  // Try direct
-  const direct = await fetchWithTimeout(url, timeoutMs);
-  if (direct.ok) return direct.text;
-
-  // Try proxies from CONFIG (if present)
+  // then proxies
   const proxyFns = [];
   if (Array.isArray(CONFIG?.corsProxies) && CONFIG.corsProxies.length) proxyFns.push(...CONFIG.corsProxies);
   else if (typeof CONFIG?.corsProxy === "function") proxyFns.push(CONFIG.corsProxy);
@@ -78,24 +70,23 @@ async function fetchXmlWithFallback(url, timeoutMs) {
   for (let i = 0; i < proxyFns.length; i++) {
     try {
       const proxied = proxyFns[i](url);
-      const r = await fetchWithTimeout(proxied, timeoutMs);
-      if (r.ok) return r.text;
+      const txt = await fetchTextTimeout(proxied, timeoutMs);
+      if (txt) return txt;
     } catch {}
   }
 
   return null;
 }
 
-async function fetchWithTimeout(url, timeoutMs) {
+async function fetchTextTimeout(url, timeoutMs) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
-
   try {
-    const res = await fetch(url, { cache: "no-store", signal: controller.signal });
-    const text = await res.text();
-    return { ok: res.ok, text };
+    const r = await fetch(url, { cache: "no-store", signal: controller.signal });
+    if (!r.ok) return null;
+    return await r.text();
   } catch {
-    return { ok: false, text: null };
+    return null;
   } finally {
     clearTimeout(t);
   }
@@ -135,7 +126,9 @@ function parseRssXml(xmlText, groupKey, groupTitle) {
       description: stripHtml(descriptionRaw),
       image,
       date: isNaN(date) ? 0 : date,
-      groupKey: String(groupKey || "").toLowerCase(),  // ✅ tagging for filtering
+
+      // ✅ critical: makes your reels filter work
+      groupKey: String(groupKey || "").toLowerCase(),
       groupTitle: String(groupTitle || "").trim(),
     });
   }

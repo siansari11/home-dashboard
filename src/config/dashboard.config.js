@@ -22,7 +22,7 @@ export const DASHBOARD_CONFIG = {
 
     maxItemsTotal: 12,
     maxItemsPerGroup: 12,
-
+    perFeedTimeoutMs: 8000,
     refreshMs: 10 * 60 * 1000,
   },
 };
