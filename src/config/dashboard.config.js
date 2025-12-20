@@ -18,7 +18,7 @@ export const DASHBOARD_CONFIG = {
 
   rss: {
     // ✅ only lifestyle now
-    enabledGroups: ["lifestyle"],
+    enabledGroups: ["lifestyle","food"],
 
     maxItemsTotal: 12,
     maxItemsPerGroup: 12,
