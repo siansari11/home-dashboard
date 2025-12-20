@@ -1,187 +1,129 @@
-/* ========== Feed (Lifestyle) ========== */
-.feedHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
-}
-.feedStatus{
-  font-size:12px;
-  color: var(--muted);
-}
-.feedBody{ color: var(--muted); }
+// src/components/reels.js
+import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
+import { loadRssItems } from "../lib/rss.js";
+import { makeQrDataUrl } from "../lib/qr.js";
 
-.feedList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
-}
+export async function renderReels(el){
+  el.innerHTML = `
+    <div class="reelsHeader">
+      <div class="pill">🍲 Food</div>
+      <div id="reelsStatus" class="reelsStatus"></div>
+    </div>
+    <div id="reelsBody" class="reelsBody">Loading…</div>
+  `;
 
-.feedRow{
-  display:grid;
-  grid-template-columns: 92px 1fr;
-  gap:10px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background: rgba(255,255,255,0.55);
-  align-items:center;
-}
-.feedRow--clickable{ cursor:pointer; }
+  const status = el.querySelector("#reelsStatus");
+  const body = el.querySelector("#reelsBody");
 
-.feedMedia{
-  width:92px;
-  height:64px;
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid rgba(15,23,42,0.10);
-  background: rgba(15,23,42,0.04);
-}
-.feedImg{ width:100%; height:100%; object-fit:cover; display:block; }
-.feedImgPlaceholder{ width:100%; height:100%; background: rgba(15,23,42,0.06); }
+  async function refresh(){
+    status.textContent = "Updating…";
 
-.feedText{ min-width:0; display:flex; flex-direction:column; gap:4px; }
+    try{
+      // IMPORTANT: loadRssItems is already normalized by rss.js
+      // We just filter to "food" group items here.
+      const all = await loadRssItems();
+      const items = (all || []).filter(x => (x.groupKey || "").toLowerCase() === "food");
 
-.feedTitleWrap{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
-  min-width:0;
-}
-.feedQrTiny{
-  width:18px;
-  height:18px;
-  border-radius:4px;
-  flex:0 0 auto;
-  opacity:0.95;
-}
-.feedTitle{
-  font-weight:900;
-  color: rgba(15,23,42,0.80);
-  font-size:13px;
-  line-height:1.2;
+      if (!items.length){
+        body.innerHTML = `
+          <div class="emptyCard">
+            <div class="emptyTitle">No food items found</div>
+            <div class="emptyText">
+              Check <code>src/config/feeds.js</code> and ensure the Food feeds are under group key <b>"food"</b>.
+            </div>
+          </div>
+        `;
+        status.textContent = "";
+        return;
+      }
 
-  /* show full-ish title, clamp to 3 lines */
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:3;
-  overflow:hidden;
-}
-.feedMeta{
-  font-size:12px;
-  color: var(--muted);
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-}
-.feedDesc{
-  font-size:12px;
-  color: var(--muted);
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
-}
+      // Show a scrollable list of “reel tiles”
+      const max = (DASHBOARD_CONFIG.rss?.maxItemsPerGroup) || 10;
+      const show = items.slice(0, max);
 
-/* ========== Reels (Food) ========== */
-.reelsHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-  gap:10px;
-  margin-bottom:10px;
-}
-.reelsStatus{
-  font-size:12px;
-  color: var(--muted);
-}
-.reelsBody{ color: var(--muted); }
+      let html = `<div class="reelsList">`;
 
-.reelsList{
-  display:flex;
-  flex-direction:column;
-  gap:10px;
+      for (let i = 0; i < show.length; i++){
+        const it = show[i];
+
+        const link = String(it.link || "").trim();
+        const title = String(it.title || "Untitled").trim();
+        const desc = String(it.description || "").trim();
+
+        const img = pickBestImage(it);
+        const qr = link ? await makeQrDataUrl(link, 72) : "";
+
+        html += `
+          <div class="reelTile">
+            <div class="reelMedia">
+              ${
+                img
+                  ? `<img class="reelImg" src="${escapeAttr(img)}" alt="" loading="lazy" />`
+                  : `<div class="reelImgPlaceholder"></div>`
+              }
+            </div>
+
+            <div class="reelText">
+              <div class="reelTitle">${escapeHtml(title)}</div>
+              <div class="reelDesc">${escapeHtml(desc)}</div>
+
+              <div class="reelMetaRow">
+                <div class="reelSource">${escapeHtml(it.groupTitle || "Food")}</div>
+                ${
+                  qr
+                    ? `<img class="reelQr" src="${escapeAttr(qr)}" alt="QR" />`
+                    : ``
+                }
+              </div>
+            </div>
+          </div>
+        `;
+      }
+
+      html += `</div>`;
+      body.innerHTML = html;
+      status.textContent = "Updated";
+    } catch (e) {
+      body.innerHTML = `
+        <div class="emptyCard">
+          <div class="emptyTitle">Food failed to load</div>
+          <div class="emptyText" style="white-space:pre-wrap">${escapeHtml(String(e?.stack || e))}</div>
+        </div>
+      `;
+      status.textContent = "";
+    }
+  }
+
+  await refresh();
+
+  const refreshMs = (DASHBOARD_CONFIG.rss?.refreshMs) || (10 * 60 * 1000);
+  setInterval(refresh, refreshMs);
 }
 
-.reelTile{
-  display:grid;
-  grid-template-columns: 110px 1fr;
-  gap:10px;
-  padding:10px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background: rgba(255,255,255,0.55);
-  align-items:center;
-}
-.reelTile--clickable{ cursor:pointer; }
+/** Try multiple common fields, because different RSS sources expose images differently */
+function pickBestImage(it){
+  // 1) Normalized by our rss.js (feed column used this)
+  if (it?.image) return it.image;
 
-.reelMedia{
-  width:110px;
-  height:78px;
-  border-radius:12px;
-  overflow:hidden;
-  border:1px solid rgba(15,23,42,0.10);
-  background: rgba(15,23,42,0.04);
-}
-.reelImg{ width:100%; height:100%; object-fit:cover; display:block; }
-.reelImgPlaceholder{ width:100%; height:100%; background: rgba(15,23,42,0.06); }
+  // 2) Common alternates
+  if (it?.thumbnail) return it.thumbnail;
+  if (it?.imageUrl) return it.imageUrl;
 
-.reelText{
-  min-width:0;
-  display:flex;
-  flex-direction:column;
-  gap:6px;
+  // 3) Some parsers store arrays
+  if (Array.isArray(it?.images) && it.images[0]) return it.images[0];
+
+  // 4) Some RSS provides enclosure URLs
+  if (it?.enclosure?.url) return it.enclosure.url;
+
+  return "";
 }
 
-.reelTitleWrap{
-  display:flex;
-  align-items:flex-start;
-  gap:8px;
-  min-width:0;
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, (m) => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",
+    '"':"&quot;","'":"&#039;"
+  }[m]));
 }
-.reelQrTiny{
-  width:18px;
-  height:18px;
-  border-radius:4px;
-  flex:0 0 auto;
-  opacity:0.95;
-}
-
-.reelTitle{
-  font-weight:900;
-  color: rgba(15,23,42,0.82);
-  font-size:13px;
-  line-height:1.2;
-
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:3;
-  overflow:hidden;
-}
-
-.reelDesc{
-  font-size:12px;
-  color: var(--muted);
-  display:-webkit-box;
-  -webkit-box-orient:vertical;
-  -webkit-line-clamp:2;
-  overflow:hidden;
-}
-
-/* Empty state */
-.emptyCard{
-  padding:12px;
-  border:1px solid var(--line);
-  border-radius:16px;
-  background: rgba(255,255,255,0.55);
-}
-.emptyTitle{
-  font-weight:900;
-  color: rgba(15,23,42,0.75);
-}
-.emptyText{
-  margin-top:6px;
-  font-size:13px;
-  color: var(--muted);
+function escapeAttr(s){
+  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
 }
