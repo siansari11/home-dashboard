@@ -1,195 +1,144 @@
 // src/components/feed.js
-import "../styles/tiles.css";
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 import { loadRssItems } from "../lib/rss.js";
 import { makeQrDataUrl } from "../lib/qr.js";
 
 export async function renderFeed(el){
-  el.innerHTML = `
-    <div class="tileHeader">
-      <div class="pill">🏠 Lifestyle</div>
-      <div class="tileNav">
-        <button id="lifePrev" class="tileNavBtn" aria-label="Previous">
-          ${arrowSvg("left")}
-        </button>
-        <button id="lifeNext" class="tileNavBtn" aria-label="Next">
-          ${arrowSvg("right")}
-        </button>
-        <div id="lifeStatus" class="tileStatus"></div>
-      </div>
-    </div>
-    <div id="lifeCarousel" class="tileCarousel" aria-label="Lifestyle carousel"></div>
-  `;
+  el.innerHTML = "";
 
-  var status = el.querySelector("#lifeStatus");
-  var carousel = el.querySelector("#lifeCarousel");
+  const header = document.createElement("div");
+  header.className = "feedHeader";
 
-  var items = [];
-  var autoTimer = null;
-  var rotateMs = 30 * 1000;
+  const pill = document.createElement("div");
+  pill.className = "pill";
+  pill.textContent = "🪴 Lifestyle";
 
-  function perViewNow(){
-    return window.matchMedia && window.matchMedia("(orientation: portrait)").matches ? 1 : 2;
-  }
+  const status = document.createElement("div");
+  status.className = "feedStatus";
+  status.textContent = "";
 
-  function getFirstVisibleIndex(){
-    var children = carousel.children;
-    if (!children.length) return 0;
+  header.append(pill, status);
 
-    var left = carousel.scrollLeft;
-    var best = 0;
-    var bestDist = Infinity;
+  const body = document.createElement("div");
+  body.className = "feedBody";
+  body.textContent = "Loading…";
 
-    for (var i = 0; i < children.length; i++){
-      var d = Math.abs(children[i].offsetLeft - left);
-      if (d < bestDist){
-        bestDist = d;
-        best = i;
-      }
-    }
-    return best;
-  }
-
-  function scrollToIndex(nextIndex){
-    var tile = carousel.children[nextIndex];
-    if (!tile) return;
-    tile.scrollIntoView({ behavior: "smooth", inline: "start", block: "nearest" });
-  }
-
-  function nextPage(){
-    var pv = perViewNow();
-    var first = getFirstVisibleIndex();
-    var next = first + pv;
-    if (next >= carousel.children.length) next = 0;
-    scrollToIndex(next);
-  }
-
-  function prevPage(){
-    var pv = perViewNow();
-    var first = getFirstVisibleIndex();
-    var prev = first - pv;
-    if (prev < 0) prev = Math.max(0, carousel.children.length - pv);
-    scrollToIndex(prev);
-  }
-
-  function startAuto(){
-    stopAuto();
-    autoTimer = setInterval(function(){
-      if (!items.length) return;
-      nextPage();
-    }, rotateMs);
-  }
-
-  function stopAuto(){
-    if (autoTimer) clearInterval(autoTimer);
-    autoTimer = null;
-  }
-
-  // pause auto while user interacts
-  carousel.addEventListener("pointerdown", stopAuto);
-  carousel.addEventListener("touchstart", stopAuto, { passive:true });
-  carousel.addEventListener("pointerup", startAuto);
-  carousel.addEventListener("touchend", startAuto);
-
-  el.querySelector("#lifeNext").addEventListener("click", function(){
-    stopAuto(); nextPage(); startAuto();
-  });
-  el.querySelector("#lifePrev").addEventListener("click", function(){
-    stopAuto(); prevPage(); startAuto();
-  });
-
-  window.addEventListener("resize", function(){ startAuto(); });
-
-  function render(){
-    carousel.innerHTML = "";
-
-    if (!items.length){
-      carousel.innerHTML = `<div class="tileItem"><div class="tilePlaceholder">🏠</div></div>`;
-      return;
-    }
-
-    for (var i = 0; i < items.length; i++){
-      var it = items[i];
-      var link = String(it.link || "");
-      if (!link) continue;
-
-      var title = String(it.title || "Lifestyle item");
-      var sub = String(it.groupTitle || "");
-      var img = String(it.image || "");
-      var desc = String(it.description || it.excerpt || "").trim();
-      var qr = makeQrDataUrl(link, 80);
-
-      var tile = document.createElement("div");
-      tile.className = "tileItem";
-
-      tile.innerHTML = `
-        <a class="tileLink" href="${escapeAttr(link)}" target="_blank" rel="noreferrer">
-          <div class="tileImgWrap">
-            ${img ? `<img class="tileImg" src="${escapeAttr(img)}" alt="" />` : `<div class="tilePlaceholder">🏠</div>`}
-          </div>
-
-          <div class="tileBody">
-            <div class="tileTop">
-              <div class="tileTitleRow">
-                <img class="tileQr" alt="QR" src="${escapeAttr(qr)}" />
-                <div class="tileTitle">${escapeHtml(title)}</div>
-              </div>
-
-              ${sub ? `<div class="tileSub">${escapeHtml(sub)}</div>` : ``}
-              ${desc ? `<div class="tileDesc">${escapeHtml(desc)}</div>` : ``}
-            </div>
-
-            <div class="tileHint">Swipe or use arrows</div>
-          </div>
-        </a>
-      `;
-
-      // image fallback
-      var imgEl = tile.querySelector(".tileImg");
-      if (imgEl){
-        imgEl.addEventListener("error", function(){
-          var wrap = this.closest(".tileImgWrap");
-          if (wrap) wrap.innerHTML = `<div class="tilePlaceholder">🏠</div>`;
-        }, { once:true });
-      }
-
-      carousel.appendChild(tile);
-    }
-  }
+  el.append(header, body);
 
   async function refresh(){
     status.textContent = "Updating…";
-    try {
-      items = await loadRssItems();
-      status.textContent = items.length ? "Updated" : "";
-      render();
-      startAuto();
-    } catch (e) {
+    body.textContent = "Loading…";
+
+    try{
+      const all = await loadRssItems();
+      const items = (all || []).filter(x => String(x.groupKey || "").toLowerCase() === "lifestyle");
+
+      body.innerHTML = "";
+      if (!items.length){
+        body.append(makeEmptyCard("No lifestyle items found", "Check src/config/feeds.js and ensure Lifestyle feeds are under key \"lifestyle\"."));
+        status.textContent = "";
+        return;
+      }
+
+      const list = document.createElement("div");
+      list.className = "feedList";
+
+      const max = Number(DASHBOARD_CONFIG?.rss?.maxItemsPerGroup || 10);
+      const show = items.slice(0, max);
+
+      for (let i = 0; i < show.length; i++){
+        const it = show[i];
+        list.append(await makeFeedRow(it));
+      }
+
+      body.append(list);
+      status.textContent = "Updated";
+    } catch (e){
+      body.innerHTML = "";
+      body.append(makeEmptyCard("Lifestyle failed to load", String(e?.stack || e)));
       status.textContent = "";
-      items = [];
-      render();
     }
   }
 
   await refresh();
 
-  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
+  const refreshMs = Number(DASHBOARD_CONFIG?.rss?.refreshMs || (10 * 60 * 1000));
   setInterval(refresh, refreshMs);
 }
 
-function arrowSvg(dir){
-  // Simple inline SVG string (not “inline styles”)
-  var d = dir === "left"
-    ? "M15 4 L7 12 L15 20"
-    : "M9 4 L17 12 L9 20";
-  return `<svg class="tileNavIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="${d}"/></svg>`;
+async function makeFeedRow(it){
+  const row = document.createElement("div");
+  row.className = "feedRow";
+
+  const media = document.createElement("div");
+  media.className = "feedMedia";
+
+  if (it.image){
+    const img = document.createElement("img");
+    img.className = "feedImg";
+    img.alt = "";
+    img.loading = "lazy";
+    img.src = it.image;
+    media.append(img);
+  } else {
+    const ph = document.createElement("div");
+    ph.className = "feedImgPlaceholder";
+    media.append(ph);
+  }
+
+  const text = document.createElement("div");
+  text.className = "feedText";
+
+  const titleWrap = document.createElement("div");
+  titleWrap.className = "feedTitleWrap";
+
+  // Tiny QR in front of title
+  if (it.link){
+    const qr = document.createElement("img");
+    qr.className = "feedQrTiny";
+    qr.alt = "QR";
+    qr.src = await makeQrDataUrl(it.link, 72);
+    titleWrap.append(qr);
+  }
+
+  const title = document.createElement("div");
+  title.className = "feedTitle";
+  title.textContent = it.title || "Untitled";
+  titleWrap.append(title);
+
+  const meta = document.createElement("div");
+  meta.className = "feedMeta";
+  meta.textContent = it.groupTitle || "";
+
+  const desc = document.createElement("div");
+  desc.className = "feedDesc";
+  desc.textContent = it.description || "";
+
+  text.append(titleWrap, meta, desc);
+
+  row.append(media, text);
+
+  // Click opens link in new tab (optional; QR works even if you don’t use this)
+  if (it.link){
+    row.classList.add("feedRow--clickable");
+    row.addEventListener("click", () => window.open(it.link, "_blank", "noopener,noreferrer"));
+  }
+
+  return row;
 }
 
-function escapeHtml(s){
-  return String(s || "").replace(/[&<>"']/g, function (m) {
-    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
-  });
-}
-function escapeAttr(s){
-  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
+function makeEmptyCard(title, text){
+  const box = document.createElement("div");
+  box.className = "emptyCard";
+
+  const t = document.createElement("div");
+  t.className = "emptyTitle";
+  t.textContent = title;
+
+  const p = document.createElement("div");
+  p.className = "emptyText";
+  p.textContent = text;
+
+  box.append(t, p);
+  return box;
 }

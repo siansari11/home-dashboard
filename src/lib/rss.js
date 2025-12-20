@@ -1,129 +1,153 @@
 // src/lib/rss.js
 import { CONFIG } from "../config.js";
-import { FEED_GROUPS } from "../config/feeds.js";
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
+import { FEED_GROUPS } from "../config/feeds.js";
 
-function getEnabledFeedGroups(){
-  var enabled = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.enabledGroups) ? DASHBOARD_CONFIG.rss.enabledGroups : [];
-  var map = {};
-  for (var i = 0; i < enabled.length; i++) map[enabled[i]] = true;
+/**
+ * Public API used by Feed + Reels.
+ * Returns normalized items:
+ * { title, link, description, image, date, groupKey, groupTitle }
+ */
+export async function loadRssItems() {
+  const cfg = DASHBOARD_CONFIG?.rss || {};
+  const enabled = Array.isArray(cfg.enabledGroups) ? cfg.enabledGroups : null;
 
-  var out = [];
-  for (var j = 0; j < FEED_GROUPS.length; j++){
-    if (map[FEED_GROUPS[j].key]) out.push(FEED_GROUPS[j]);
+  // If enabledGroups is set, only load those groups; otherwise load all groups in feeds.js
+  const groups = (FEED_GROUPS || []).filter((g) => {
+    if (!enabled) return true;
+    return enabled.includes(g.key);
+  });
+
+  const maxTotal = Number(cfg.maxItemsTotal || 12);
+  const maxPerGroup = Number(cfg.maxItemsPerGroup || 8);
+
+  const all = [];
+
+  for (let gi = 0; gi < groups.length; gi++) {
+    const g = groups[gi];
+    const urls = Array.isArray(g.urls) ? g.urls : [];
+    let groupItems = [];
+
+    for (let ui = 0; ui < urls.length; ui++) {
+      const url = String(urls[ui] || "").trim();
+      if (!url) continue;
+
+      const xmlText = await fetchXmlWithFallback(url);
+      if (!xmlText) continue;
+
+      const parsed = parseRssXml(xmlText, g.key, g.title);
+      groupItems = groupItems.concat(parsed);
+      if (groupItems.length >= maxPerGroup) break;
+    }
+
+    // Sort newest first if date exists
+    groupItems.sort((a, b) => (b.date || 0) - (a.date || 0));
+
+    // Limit per group
+    groupItems = groupItems.slice(0, maxPerGroup);
+
+    all.push(...groupItems);
   }
+
+  // Global sort + limit
+  all.sort((a, b) => (b.date || 0) - (a.date || 0));
+  return all.slice(0, maxTotal);
+}
+
+async function fetchXmlWithFallback(url) {
+  // Try direct fetch first
+  try {
+    const r = await fetch(url, { cache: "no-store" });
+    if (r.ok) return await r.text();
+  } catch {}
+
+  // Then try proxies from CONFIG (if present)
+  const proxyFns = [];
+  if (Array.isArray(CONFIG?.corsProxies) && CONFIG.corsProxies.length) proxyFns.push(...CONFIG.corsProxies);
+  else if (typeof CONFIG?.corsProxy === "function") proxyFns.push(CONFIG.corsProxy);
+
+  for (let i = 0; i < proxyFns.length; i++) {
+    try {
+      const proxied = proxyFns[i](url);
+      const r = await fetch(proxied, { cache: "no-store" });
+      if (!r.ok) continue;
+      return await r.text();
+    } catch {}
+  }
+
+  return null;
+}
+
+function parseRssXml(xmlText, groupKey, groupTitle) {
+  let doc;
+  try {
+    doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  } catch {
+    return [];
+  }
+
+  const items = Array.from(doc.querySelectorAll("item"));
+  const out = [];
+
+  for (let i = 0; i < items.length; i++) {
+    const it = items[i];
+
+    const title = text(it, "title") || "Untitled";
+    const link = (text(it, "link") || "").trim();
+    const description = (text(it, "description") || text(it, "content\\:encoded") || "").trim();
+
+    const pub = (text(it, "pubDate") || text(it, "dc\\:date") || "").trim();
+    const date = pub ? Date.parse(pub) : 0;
+
+    // Best-effort image extraction
+    const image =
+      attr(it, "media\\:content", "url") ||
+      attr(it, "media\\:thumbnail", "url") ||
+      attr(it, "enclosure", "url") ||
+      firstImgFromHtml(description) ||
+      "";
+
+    out.push({
+      title,
+      link,
+      description: stripHtml(description),
+      image,
+      date: isNaN(date) ? 0 : date,
+      groupKey: String(groupKey || "").toLowerCase(),     // ✅ ALWAYS set
+      groupTitle: String(groupTitle || "").trim()         // ✅ ALWAYS set
+    });
+  }
+
   return out;
 }
 
-async function fetchWithCorsFallback(url){
-  var proxyFns = [];
-  if (CONFIG.corsProxies && CONFIG.corsProxies.length) proxyFns = CONFIG.corsProxies;
-  else if (CONFIG.corsProxy) proxyFns = [CONFIG.corsProxy];
-
-  var errors = [];
-  for (var i = 0; i < proxyFns.length; i++){
-    var proxied = proxyFns[i](url);
-    try {
-      var res = await fetch(proxied, { cache: "no-store" });
-      if (!res.ok) throw new Error("HTTP " + res.status);
-      return await res.text();
-    } catch (e) {
-      errors.push(proxied + " -> " + String(e.message || e));
-    }
-  }
-  throw new Error("RSS fetch failed:\n" + errors.join("\n"));
+function text(parent, sel) {
+  const n = parent.querySelector(sel);
+  return n ? (n.textContent || "") : "";
 }
 
-function parseRssXml(xmlText){
-  var parser = new DOMParser();
-  var doc = parser.parseFromString(xmlText, "text/xml");
-
-  var items = Array.from(doc.querySelectorAll("item"));
-  if (!items.length) items = Array.from(doc.querySelectorAll("entry")); // atom fallback
-
-  return items.map(function(node){
-    var title = textOf(node, "title");
-    var link = textOf(node, "link");
-    if (!link) {
-      var linkEl = node.querySelector('link[rel="alternate"]') || node.querySelector("link");
-      if (linkEl && linkEl.getAttribute) link = linkEl.getAttribute("href") || "";
-    }
-
-    var pubDate = textOf(node, "pubDate") || textOf(node, "published") || textOf(node, "updated") || "";
-    var description = textOf(node, "description") || textOf(node, "content") || textOf(node, "summary") || "";
-
-    var image = findImageUrl(node, description);
-
-    return {
-      title: title || "",
-      link: link || "",
-      pubDate: pubDate || "",
-      description: description || "",
-      image: image || ""
-    };
-  }).filter(function(x){
-    return x.title && x.link;
-  });
+function attr(parent, sel, name) {
+  const n = parent.querySelector(sel);
+  return n ? (n.getAttribute(name) || "") : "";
 }
 
-function textOf(node, tag){
-  var el = node.querySelector(tag);
-  return el ? (el.textContent || "").trim() : "";
+function firstImgFromHtml(html) {
+  try {
+    if (!html) return "";
+    const d = new DOMParser().parseFromString(String(html), "text/html");
+    const img = d.querySelector("img");
+    return img ? (img.getAttribute("src") || "") : "";
+  } catch {
+    return "";
+  }
 }
 
-function findImageUrl(node, descriptionHtml){
-  // RSS media tags
-  var media = node.querySelector("media\\:content, content");
-  if (media && media.getAttribute) {
-    var u = media.getAttribute("url");
-    if (u) return u;
+function stripHtml(s) {
+  try {
+    const d = document.createElement("div");
+    d.innerHTML = String(s || "");
+    return (d.textContent || "").replace(/\s+/g, " ").trim();
+  } catch {
+    return String(s || "").replace(/\s+/g, " ").trim();
   }
-  var enc = node.querySelector("enclosure");
-  if (enc && enc.getAttribute) {
-    var u2 = enc.getAttribute("url");
-    if (u2) return u2;
-  }
-
-  // Try <img> in description
-  var m = String(descriptionHtml || "").match(/<img[^>]+src=["']([^"']+)["']/i);
-  if (m && m[1]) return m[1];
-
-  return "";
-}
-
-export async function loadRssItems(){
-  var groups = getEnabledFeedGroups();
-  var maxTotal = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.maxItemsTotal) ? DASHBOARD_CONFIG.rss.maxItemsTotal : 10;
-  var maxPerGroup = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.maxItemsPerGroup) ? DASHBOARD_CONFIG.rss.maxItemsPerGroup : 6;
-
-  var all = [];
-
-  for (var g = 0; g < groups.length; g++){
-    var group = groups[g];
-    for (var u = 0; u < group.urls.length; u++){
-      var url = group.urls[u];
-      try {
-        var xml = await fetchWithCorsFallback(url);
-        var items = parseRssXml(xml).slice(0, maxPerGroup);
-        for (var i = 0; i < items.length; i++){
-          all.push({
-            ...items[i],
-            groupKey: group.key,
-            groupTitle: group.title
-          });
-        }
-      } catch (e) {
-        // Ignore one feed failing; keep others working
-      }
-    }
-  }
-
-  // Basic sort: newest first when pubDate parses, else keep collected order
-  all.sort(function(a,b){
-    var ta = Date.parse(a.pubDate) || 0;
-    var tb = Date.parse(b.pubDate) || 0;
-    return tb - ta;
-  });
-
-  return all.slice(0, maxTotal);
 }
