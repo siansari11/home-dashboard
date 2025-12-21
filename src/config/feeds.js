@@ -14,11 +14,12 @@ export const FEED_GROUPS = [
     key: "food",
     title: "Food",
     urls: [
-      "https://www.eatingwell.com/rss",
       "https://www.skinnytaste.com/feed",
-      "https://rss.app/feeds/1p7eRIJ3IbafIniz.xml",
-      "https://rss.app/feeds/zJdNOAIhyefnGMux.xml",
+      //Mediterranean diet
+      "https://rss.app/feeds/JCPNHZf100jQirCJ.xml", 
+      //Success stories 
       "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
+      "https://www.eatingwell.com/rss",
     ],
   },
 ];

@@ -230,7 +230,12 @@ a{ color: inherit; text-decoration:none; }
 .weatherCard{
   margin-bottom: 14px;
 }
-
+/* Disable scrollbar on weather tile */
+#weather,
+.weatherStrip,
+#weather.card {
+  overflow: visible !important;
+} 
 /* 2x2 grid is ALWAYS equal columns */
 .grid.grid--2x2{
   grid-template-columns: 1fr 1fr !important;
