@@ -6,7 +6,7 @@ export const FEED_GROUPS = [
     key: "lifestyle",
     title: "Home & Lifestyle",
     urls: [
-      "https://www.thespruce.com/rss",
+      // "https://www.thespruce.com/rss",
       "https://www.apartmenttherapy.com/main.rss",
     ],
   },
@@ -16,10 +16,9 @@ export const FEED_GROUPS = [
     urls: [
       "https://www.skinnytaste.com/feed",
       //Mediterranean diet
-      "https://rss.app/feeds/JCPNHZf100jQirCJ.xml", 
+      "https://rss.app/feeds/JCPNHZf100jQirCJ.json", 
       //Success stories 
-      "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
-      "https://www.eatingwell.com/rss",
+      "https://rss.app/feeds/vChkVYGNhNqINcAj.json",
     ],
   },
 ];
