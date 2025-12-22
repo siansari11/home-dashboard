@@ -5,9 +5,9 @@ export const FOOD_RSS_URLS = [
       // --- recipes (moved from lifestyle) ---
       "https://www.skinnytaste.com/feed",
       //Mediterranean diet
-      "https://rss.app/feeds/JCPNHZf100jQirCJ.json", 
+      "https://rss.app/feeds/JCPNHZf100jQirCJ.xml", 
       //Success stories 
-      "https://rss.app/feeds/vChkVYGNhNqINcAj.json",
+      "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
 ];
 
 // Always-works fallback (your own reels / favorite links)
