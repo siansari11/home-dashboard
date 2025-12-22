@@ -16,9 +16,9 @@ export const FEED_GROUPS = [
     urls: [
       "https://www.skinnytaste.com/feed",
       //Mediterranean diet
-      "https://rss.app/feeds/JCPNHZf100jQirCJ.json", 
+      "https://rss.app/feeds/JCPNHZf100jQirCJ.xml", 
       //Success stories 
-      "https://rss.app/feeds/vChkVYGNhNqINcAj.json",
+      "https://rss.app/feeds/vChkVYGNhNqINcAj.xml",
     ],
   },
 ];
