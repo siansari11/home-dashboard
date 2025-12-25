@@ -1,49 +1,42 @@
 // src/components/feed.js
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadRssItemsWithDebug } from "../lib/rss.js";
+import { loadRssItems } from "../lib/rss.js";
 
 export async function renderFeed(el){
+  console.log("[FEED] renderFeed called");
+
   el.innerHTML =
     '<div class="sectionHead">' +
       '<div class="pill">🧺 Lifestyle</div>' +
       '<div id="feedStatus" class="sectionStatus"></div>' +
     "</div>" +
-    '<div id="feedDebug" class="debugBox" style="display:none;"></div>' +
     '<div id="feedBody" class="sectionBody">Loading…</div>';
 
   var status = el.querySelector("#feedStatus");
   var body = el.querySelector("#feedBody");
-  var dbg = el.querySelector("#feedDebug");
 
   async function refresh(){
+    console.log("[FEED] refresh start");
     status.textContent = "Updating…";
 
     try {
-      const { items, debug } = await loadRssItemsWithDebug();
+      var items = await loadRssItems();
+      console.log("[FEED] items total", items.length);
 
-      // Filter to lifestyle
-      const list = (items || []).filter(x => (x.groupKey || "") === "lifestyle");
+      // keep only lifestyle
+      var list = items.filter(function(x){ return (x.groupKey || "") === "lifestyle"; });
+      console.log("[FEED] lifestyle items", list.length);
 
-      // Always show a small debug summary if nothing loads
       if (!list.length) {
-        dbg.style.display = "block";
-        dbg.textContent = "RSS DEBUG: " + (debug?.summary || "no summary") +
-          "\nGroups: " + JSON.stringify(debug?.groupsFound || [], null, 2) +
-          "\nFetches: " + JSON.stringify(debug?.fetches || [], null, 2) +
-          "\nParsed: " + JSON.stringify(debug?.parsedCounts || [], null, 2) +
-          "\nErrors: " + JSON.stringify(debug?.errors || [], null, 2);
-
         body.innerHTML = '<div class="emptyState">No lifestyle items found.</div>';
         status.textContent = "";
         return;
       }
 
-      dbg.style.display = "none";
       body.innerHTML = renderSimpleTiles(list);
       status.textContent = "Updated";
     } catch (e) {
-      dbg.style.display = "block";
-      dbg.textContent = "FEED CRASH:\n" + String(e && (e.stack || e.message || e));
+      console.log("[FEED] ERROR", e);
       body.innerHTML = '<div class="emptyState">Lifestyle feed failed.</div>';
       status.textContent = "";
     }
