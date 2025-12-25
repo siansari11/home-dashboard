@@ -47,6 +47,6 @@ renderHeader(document.querySelector("#header"));
 renderWeather(document.querySelector("#weather"));
 renderAgenda(document.querySelector("#agenda"));
 renderTasks(document.querySelector("#tasks"));
-  overflow: hidden;
+//  overflow: hidden;
 renderFeed(document.querySelector('#feed'));
 renderReels(document.querySelector('#reels'));
