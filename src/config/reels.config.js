@@ -2,7 +2,6 @@
 
 // ✅ “Food” column sources = instagram-style rss.app feeds + recipe rss feeds
 export const FOOD_RSS_URLS = [
-      // --- recipes (moved from lifestyle) ---
       "https://www.skinnytaste.com/feed",
       //Mediterranean diet
       "https://rss.app/feeds/JCPNHZf100jQirCJ.xml", 
