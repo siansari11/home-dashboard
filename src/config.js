@@ -3,9 +3,7 @@ export const CONFIG = {
 
   // Pilot mode: try multiple public CORS proxies (they can be flaky)
   corsProxies: [
-    (url) => "https://corsproxy.io/?"+{encodeURIComponent(url)},                  // common free proxy pattern 3
+    (url) => "https://corsproxy.io/?"+encodeURIComponent(url),                  // common free proxy pattern 3
   ],
-  corsProxy: [
-    (url) => "https://corsproxy.io/?"+{encodeURIComponent(url)},                  // common free proxy pattern 3
-  ]
+  corsProxy: (url) => "https://corsproxy.io/?"+encodeURIComponent(url),                  // common free proxy pattern 3
 };
