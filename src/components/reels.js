@@ -1,48 +1,42 @@
 // src/components/reels.js
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadRssItemsWithDebug } from "../lib/rss.js";
+import { loadRssItems } from "../lib/rss.js";
 
 export async function renderReels(el){
+  console.log("[REELS] renderReels called");
+
   el.innerHTML =
     '<div class="sectionHead">' +
       '<div class="pill">🍲 Food</div>' +
       '<div id="reelsStatus" class="sectionStatus"></div>' +
     "</div>" +
-    '<div id="reelsDebug" class="debugBox" style="display:none;"></div>' +
     '<div id="reelsBody" class="sectionBody">Loading…</div>';
 
   var status = el.querySelector("#reelsStatus");
   var body = el.querySelector("#reelsBody");
-  var dbg = el.querySelector("#reelsDebug");
 
   async function refresh(){
+    console.log("[REELS] refresh start");
     status.textContent = "Updating…";
 
     try {
-      const { items, debug } = await loadRssItemsWithDebug();
+      var items = await loadRssItems();
+      console.log("[REELS] items total", items.length);
 
-      // Filter to food
-      const list = (items || []).filter(x => (x.groupKey || "") === "food");
+      // keep only food
+      var list = items.filter(function(x){ return (x.groupKey || "") === "food"; });
+      console.log("[REELS] food items", list.length);
 
       if (!list.length) {
-        dbg.style.display = "block";
-        dbg.textContent = "RSS DEBUG: " + (debug?.summary || "no summary") +
-          "\nGroups: " + JSON.stringify(debug?.groupsFound || [], null, 2) +
-          "\nFetches: " + JSON.stringify(debug?.fetches || [], null, 2) +
-          "\nParsed: " + JSON.stringify(debug?.parsedCounts || [], null, 2) +
-          "\nErrors: " + JSON.stringify(debug?.errors || [], null, 2);
-
         body.innerHTML = '<div class="emptyState">No food items found.</div>';
         status.textContent = "";
         return;
       }
 
-      dbg.style.display = "none";
       body.innerHTML = renderSimpleTiles(list);
       status.textContent = "Updated";
     } catch (e) {
-      dbg.style.display = "block";
-      dbg.textContent = "REELS CRASH:\n" + String(e && (e.stack || e.message || e));
+      console.log("[REELS] ERROR", e);
       body.innerHTML = '<div class="emptyState">Food feed failed.</div>';
       status.textContent = "";
     }
