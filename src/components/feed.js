@@ -1,144 +1,85 @@
 // src/components/feed.js
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadRssItems } from "../lib/rss.js";
-import { makeQrDataUrl } from "../lib/qr.js";
+import { loadRssItemsWithDebug } from "../lib/rss.js";
 
 export async function renderFeed(el){
-  el.innerHTML = "";
+  el.innerHTML =
+    '<div class="sectionHead">' +
+      '<div class="pill">🧺 Lifestyle</div>' +
+      '<div id="feedStatus" class="sectionStatus"></div>' +
+    "</div>" +
+    '<div id="feedDebug" class="debugBox" style="display:none;"></div>' +
+    '<div id="feedBody" class="sectionBody">Loading…</div>';
 
-  const header = document.createElement("div");
-  header.className = "feedHeader";
-
-  const pill = document.createElement("div");
-  pill.className = "pill";
-  pill.textContent = "🪴 Lifestyle";
-
-  const status = document.createElement("div");
-  status.className = "feedStatus";
-  status.textContent = "";
-
-  header.append(pill, status);
-
-  const body = document.createElement("div");
-  body.className = "feedBody";
-  body.textContent = "Loading…";
-
-  el.append(header, body);
+  var status = el.querySelector("#feedStatus");
+  var body = el.querySelector("#feedBody");
+  var dbg = el.querySelector("#feedDebug");
 
   async function refresh(){
     status.textContent = "Updating…";
-    body.textContent = "Loading…";
 
-    try{
-      const all = await loadRssItems();
-      const items = (all || []).filter(x => String(x.groupKey || "").toLowerCase() === "lifestyle");
+    try {
+      const { items, debug } = await loadRssItemsWithDebug();
 
-      body.innerHTML = "";
-      if (!items.length){
-        body.append(makeEmptyCard("No lifestyle items found", "Check src/config/feeds.js and ensure Lifestyle feeds are under key \"lifestyle\"."));
+      // Filter to lifestyle
+      const list = (items || []).filter(x => (x.groupKey || "") === "lifestyle");
+
+      // Always show a small debug summary if nothing loads
+      if (!list.length) {
+        dbg.style.display = "block";
+        dbg.textContent = "RSS DEBUG: " + (debug?.summary || "no summary") +
+          "\nGroups: " + JSON.stringify(debug?.groupsFound || [], null, 2) +
+          "\nFetches: " + JSON.stringify(debug?.fetches || [], null, 2) +
+          "\nParsed: " + JSON.stringify(debug?.parsedCounts || [], null, 2) +
+          "\nErrors: " + JSON.stringify(debug?.errors || [], null, 2);
+
+        body.innerHTML = '<div class="emptyState">No lifestyle items found.</div>';
         status.textContent = "";
         return;
       }
 
-      const list = document.createElement("div");
-      list.className = "feedList";
-
-      const max = Number(DASHBOARD_CONFIG?.rss?.maxItemsPerGroup || 10);
-      const show = items.slice(0, max);
-
-      for (let i = 0; i < show.length; i++){
-        const it = show[i];
-        list.append(await makeFeedRow(it));
-      }
-
-      body.append(list);
+      dbg.style.display = "none";
+      body.innerHTML = renderSimpleTiles(list);
       status.textContent = "Updated";
-    } catch (e){
-      body.innerHTML = "";
-      body.append(makeEmptyCard("Lifestyle failed to load", String(e?.stack || e)));
+    } catch (e) {
+      dbg.style.display = "block";
+      dbg.textContent = "FEED CRASH:\n" + String(e && (e.stack || e.message || e));
+      body.innerHTML = '<div class="emptyState">Lifestyle feed failed.</div>';
       status.textContent = "";
     }
   }
 
   await refresh();
 
-  const refreshMs = Number(DASHBOARD_CONFIG?.rss?.refreshMs || (10 * 60 * 1000));
+  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
 }
 
-async function makeFeedRow(it){
-  const row = document.createElement("div");
-  row.className = "feedRow";
-
-  const media = document.createElement("div");
-  media.className = "feedMedia";
-
-  if (it.image){
-    const img = document.createElement("img");
-    img.className = "feedImg";
-    img.alt = "";
-    img.loading = "lazy";
-    img.src = it.image;
-    media.append(img);
-  } else {
-    const ph = document.createElement("div");
-    ph.className = "feedImgPlaceholder";
-    media.append(ph);
+function renderSimpleTiles(items){
+  var html = '<div class="feedList">';
+  for (var i = 0; i < items.length; i++){
+    var it = items[i];
+    html +=
+      '<a class="feedRow" href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer">' +
+        '<div class="feedMedia">' +
+          (it.image ? '<img class="feedImg" src="' + escapeAttr(it.image) + '" alt="" />' : "") +
+        "</div>" +
+        '<div class="feedText">' +
+          '<div class="feedTitle">' + escapeHtml(it.title) + "</div>" +
+          (it.description ? '<div class="feedDesc">' + escapeHtml(it.description) + "</div>" : "") +
+        "</div>" +
+      "</a>";
   }
-
-  const text = document.createElement("div");
-  text.className = "feedText";
-
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "feedTitleWrap";
-
-  // Tiny QR in front of title
-  if (it.link){
-    const qr = document.createElement("img");
-    qr.className = "feedQrTiny";
-    qr.alt = "QR";
-    qr.src = await makeQrDataUrl(it.link, 72);
-    titleWrap.append(qr);
-  }
-
-  const title = document.createElement("div");
-  title.className = "feedTitle";
-  title.textContent = it.title || "Untitled";
-  titleWrap.append(title);
-
-  const meta = document.createElement("div");
-  meta.className = "feedMeta";
-  meta.textContent = it.groupTitle || "";
-
-  const desc = document.createElement("div");
-  desc.className = "feedDesc";
-  desc.textContent = it.description || "";
-
-  text.append(titleWrap, meta, desc);
-
-  row.append(media, text);
-
-  // Click opens link in new tab (optional; QR works even if you don’t use this)
-  if (it.link){
-    row.classList.add("feedRow--clickable");
-    row.addEventListener("click", () => window.open(it.link, "_blank", "noopener,noreferrer"));
-  }
-
-  return row;
+  html += "</div>";
+  return html;
 }
 
-function makeEmptyCard(title, text){
-  const box = document.createElement("div");
-  box.className = "emptyCard";
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, function (m) {
+    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
+  });
+}
 
-  const t = document.createElement("div");
-  t.className = "emptyTitle";
-  t.textContent = title;
-
-  const p = document.createElement("div");
-  p.className = "emptyText";
-  p.textContent = text;
-
-  box.append(t, p);
-  return box;
+function escapeAttr(s){
+  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
 }
