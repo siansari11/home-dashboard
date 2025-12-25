@@ -2,10 +2,17 @@
 import { CONFIG } from "../config.js";
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
 import { FEED_GROUPS } from "../config/feeds.js";
-import { dbg } from "./debug.js";
+
+// ✅ Toggle debugging here (console only)
+const DEBUG_RSS = true;
+
+function log(...args){
+  if (!DEBUG_RSS) return;
+  try { console.log("[RSS]", ...args); } catch {}
+}
 
 export async function loadRssItems() {
-  dbg("RSS: loadRssItems() called");
+  log("loadRssItems() called");
 
   const cfg = DASHBOARD_CONFIG?.rss || {};
   const enabled = Array.isArray(cfg.enabledGroups) ? cfg.enabledGroups : null;
@@ -14,33 +21,32 @@ export async function loadRssItems() {
   const maxTotal = Number(cfg.maxItemsTotal || 12);
   const maxPerGroup = Number(cfg.maxItemsPerGroup || 12);
 
-  dbg("RSS: config", { enabled, perFeedTimeoutMs, maxTotal, maxPerGroup });
+  log("config", { enabled, perFeedTimeoutMs, maxTotal, maxPerGroup });
 
   const groups = (FEED_GROUPS || []).filter((g) => {
     if (!enabled) return true;
     return enabled.includes(g.key);
   });
 
-  dbg("RSS: groups picked", groups.map(g => ({ key: g.key, urls: (g.urls || []).length })));
+  log("groups", groups.map(g => ({ key: g.key, urls: (g.urls || []).length })));
 
-  const groupSettled = await Promise.allSettled(
+  const groupResults = await Promise.allSettled(
     groups.map(async (g) => {
       const urls = Array.isArray(g.urls) ? g.urls : [];
+      log("group start", g.key, urls);
 
-      dbg("RSS: group start", g.key, "urls", urls);
-
-      const urlSettled = await Promise.allSettled(
+      const urlResults = await Promise.allSettled(
         urls.map(async (u) => {
           const url = String(u || "").trim();
           if (!url) return [];
 
-          dbg("RSS: fetch start", g.key, url);
+          log("fetch start", g.key, url);
 
           const t0 = Date.now();
           const text = await fetchTextWithFallback(url, perFeedTimeoutMs);
           const ms = Date.now() - t0;
 
-          dbg("RSS: fetch end", g.key, url, "ok", !!text, "ms", ms);
+          log("fetch end", g.key, url, "ok=", !!text, "ms=", ms);
 
           if (!text) return [];
 
@@ -49,39 +55,39 @@ export async function loadRssItems() {
               ? parseRssJson(text, g.key, g.title)
               : parseRssXml(text, g.key, g.title);
 
-            dbg("RSS: parsed", g.key, url, "items", items.length);
+            log("parsed", g.key, url, "items=", items.length);
             return items;
           } catch (e) {
-            dbg("RSS: parse ERROR", g.key, url, e);
+            log("parse ERROR", g.key, url, e);
             return [];
           }
         })
       );
 
       let items = [];
-      for (let i = 0; i < urlSettled.length; i++) {
-        if (urlSettled[i].status === "fulfilled") items = items.concat(urlSettled[i].value || []);
-        else dbg("RSS: urlSettled REJECT", g.key, urlSettled[i].reason);
+      for (let i = 0; i < urlResults.length; i++){
+        if (urlResults[i].status === "fulfilled") items = items.concat(urlResults[i].value || []);
+        else log("url promise rejected", g.key, urlResults[i].reason);
       }
 
-      items.sort((a, b) => (b.date || 0) - (a.date || 0));
+      items.sort((a,b) => (b.date || 0) - (a.date || 0));
       items = items.slice(0, maxPerGroup);
 
-      dbg("RSS: group done", g.key, "itemsKept", items.length);
+      log("group done", g.key, "kept=", items.length);
       return items;
     })
   );
 
   let all = [];
-  for (let i = 0; i < groupSettled.length; i++) {
-    if (groupSettled[i].status === "fulfilled") all = all.concat(groupSettled[i].value || []);
-    else dbg("RSS: groupSettled REJECT", groupSettled[i].reason);
+  for (let i = 0; i < groupResults.length; i++){
+    if (groupResults[i].status === "fulfilled") all = all.concat(groupResults[i].value || []);
+    else log("group promise rejected", groupResults[i].reason);
   }
 
-  all.sort((a, b) => (b.date || 0) - (a.date || 0));
+  all.sort((a,b) => (b.date || 0) - (a.date || 0));
   const out = all.slice(0, maxTotal);
 
-  dbg("RSS: DONE total items", out.length);
+  log("DONE total kept=", out.length);
   return out;
 }
 
@@ -99,17 +105,17 @@ async function fetchTextWithFallback(url, timeoutMs) {
   if (Array.isArray(CONFIG?.corsProxies) && CONFIG.corsProxies.length) proxyFns.push(...CONFIG.corsProxies);
   else if (typeof CONFIG?.corsProxy === "function") proxyFns.push(CONFIG.corsProxy);
 
-  dbg("RSS: direct failed, trying proxies", proxyFns.length, "for", url);
+  log("direct failed, proxies=", proxyFns.length, "url=", url);
 
   for (let i = 0; i < proxyFns.length; i++) {
     try {
       const proxied = proxyFns[i](url);
-      dbg("RSS: proxy attempt", proxied);
+      log("proxy try", proxied);
 
       const txt = await fetchTextTimeout(proxied, timeoutMs);
       if (txt) return txt;
     } catch (e) {
-      dbg("RSS: proxy ERROR", e);
+      log("proxy ERROR", e);
     }
   }
 
@@ -119,13 +125,14 @@ async function fetchTextWithFallback(url, timeoutMs) {
 async function fetchTextTimeout(url, timeoutMs) {
   const controller = new AbortController();
   const t = setTimeout(() => controller.abort(), timeoutMs);
+
   try {
     const r = await fetch(url, { cache: "no-store", signal: controller.signal });
-    dbg("RSS: fetch status", url, r.status);
+    log("fetch status", url, r.status);
     if (!r.ok) return null;
     return await r.text();
   } catch (e) {
-    dbg("RSS: fetch EXCEPTION", url, e);
+    log("fetch EXCEPTION", url, e);
     return null;
   } finally {
     clearTimeout(t);
@@ -137,10 +144,9 @@ async function fetchTextTimeout(url, timeoutMs) {
    -------------------------- */
 
 function parseRssXml(xmlText, groupKey, groupTitle) {
-  let doc;
-  doc = new DOMParser().parseFromString(xmlText, "text/xml");
+  const doc = new DOMParser().parseFromString(xmlText, "text/xml");
   const parserError = doc.querySelector("parsererror");
-  if (parserError) throw new Error("XML parsererror: " + (parserError.textContent || "").slice(0, 120));
+  if (parserError) throw new Error("XML parsererror");
 
   const items = Array.from(doc.querySelectorAll("item"));
   const out = [];
@@ -177,8 +183,7 @@ function parseRssXml(xmlText, groupKey, groupTitle) {
 }
 
 function parseRssJson(jsonText, groupKey, groupTitle) {
-  let data = JSON.parse(jsonText);
-
+  const data = JSON.parse(jsonText);
   const items = Array.isArray(data?.items) ? data.items : (Array.isArray(data) ? data : []);
   const out = [];
 
