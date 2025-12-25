@@ -471,3 +471,37 @@ a{ color: inherit; text-decoration:none; }
   -webkit-line-clamp: 2; /* clamp only description */
   overflow: hidden;
 }
+.sectionHead{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:10px;
+  margin-bottom:10px;
+}
+.sectionStatus{
+  font-size:12px;
+  color: var(--muted);
+}
+.sectionBody{
+  color: var(--muted);
+}
+.emptyState{
+  padding:12px;
+  border:1px solid var(--line);
+  border-radius:16px;
+  background: rgba(255,255,255,0.55);
+  color: rgba(15,23,42,0.70);
+  font-weight: 700;
+}
+.debugBox{
+  margin: 8px 0 10px 0;
+  padding: 10px;
+  border-radius: 12px;
+  border: 1px dashed rgba(220,38,38,0.35);
+  background: rgba(255,255,255,0.65);
+  color: rgba(120,0,0,0.85);
+  font-size: 11px;
+  white-space: pre-wrap;
+  max-height: 180px;
+  overflow: auto;
+}
