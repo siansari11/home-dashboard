@@ -1,137 +1,84 @@
 // src/components/reels.js
 import { DASHBOARD_CONFIG } from "../config/dashboard.config.js";
-import { loadRssItems } from "../lib/rss.js";
-import { makeQrDataUrl } from "../lib/qr.js";
+import { loadRssItemsWithDebug } from "../lib/rss.js";
 
 export async function renderReels(el){
-  el.innerHTML = "";
+  el.innerHTML =
+    '<div class="sectionHead">' +
+      '<div class="pill">🍲 Food</div>' +
+      '<div id="reelsStatus" class="sectionStatus"></div>' +
+    "</div>" +
+    '<div id="reelsDebug" class="debugBox" style="display:none;"></div>' +
+    '<div id="reelsBody" class="sectionBody">Loading…</div>';
 
-  const header = document.createElement("div");
-  header.className = "reelsHeader";
-
-  const pill = document.createElement("div");
-  pill.className = "pill";
-  pill.textContent = "🍲 Food";
-
-  const status = document.createElement("div");
-  status.className = "reelsStatus";
-  status.textContent = "";
-
-  header.append(pill, status);
-
-  const body = document.createElement("div");
-  body.className = "reelsBody";
-  body.textContent = "Loading…";
-
-  el.append(header, body);
+  var status = el.querySelector("#reelsStatus");
+  var body = el.querySelector("#reelsBody");
+  var dbg = el.querySelector("#reelsDebug");
 
   async function refresh(){
     status.textContent = "Updating…";
-    body.textContent = "Loading…";
 
-    try{
-      const all = await loadRssItems();
-      const items = (all || []).filter(x => String(x.groupKey || "").toLowerCase() === "food");
+    try {
+      const { items, debug } = await loadRssItemsWithDebug();
 
-      body.innerHTML = "";
-      if (!items.length){
-        body.append(makeEmptyCard("No food items found", "Check src/config/feeds.js and ensure the Food feeds are under group key \"food\"."));
+      // Filter to food
+      const list = (items || []).filter(x => (x.groupKey || "") === "food");
+
+      if (!list.length) {
+        dbg.style.display = "block";
+        dbg.textContent = "RSS DEBUG: " + (debug?.summary || "no summary") +
+          "\nGroups: " + JSON.stringify(debug?.groupsFound || [], null, 2) +
+          "\nFetches: " + JSON.stringify(debug?.fetches || [], null, 2) +
+          "\nParsed: " + JSON.stringify(debug?.parsedCounts || [], null, 2) +
+          "\nErrors: " + JSON.stringify(debug?.errors || [], null, 2);
+
+        body.innerHTML = '<div class="emptyState">No food items found.</div>';
         status.textContent = "";
         return;
       }
 
-      const list = document.createElement("div");
-      list.className = "reelsList";
-
-      const max = Number(DASHBOARD_CONFIG?.rss?.maxItemsPerGroup || 10);
-      const show = items.slice(0, max);
-
-      for (let i = 0; i < show.length; i++){
-        list.append(await makeReelRow(show[i]));
-      }
-
-      body.append(list);
+      dbg.style.display = "none";
+      body.innerHTML = renderSimpleTiles(list);
       status.textContent = "Updated";
-    } catch (e){
-      body.innerHTML = "";
-      body.append(makeEmptyCard("Food failed to load", String(e?.stack || e)));
+    } catch (e) {
+      dbg.style.display = "block";
+      dbg.textContent = "REELS CRASH:\n" + String(e && (e.stack || e.message || e));
+      body.innerHTML = '<div class="emptyState">Food feed failed.</div>';
       status.textContent = "";
     }
   }
 
   await refresh();
 
-  const refreshMs = Number(DASHBOARD_CONFIG?.rss?.refreshMs || (10 * 60 * 1000));
+  var refreshMs = (DASHBOARD_CONFIG.rss && DASHBOARD_CONFIG.rss.refreshMs) ? DASHBOARD_CONFIG.rss.refreshMs : 10 * 60 * 1000;
   setInterval(refresh, refreshMs);
 }
 
-async function makeReelRow(it){
-  const row = document.createElement("div");
-  row.className = "reelTile";
-
-  const media = document.createElement("div");
-  media.className = "reelMedia";
-
-  if (it.image){
-    const img = document.createElement("img");
-    img.className = "reelImg";
-    img.alt = "";
-    img.loading = "lazy";
-    img.src = it.image;
-    media.append(img);
-  } else {
-    const ph = document.createElement("div");
-    ph.className = "reelImgPlaceholder";
-    media.append(ph);
+function renderSimpleTiles(items){
+  var html = '<div class="feedList">';
+  for (var i = 0; i < items.length; i++){
+    var it = items[i];
+    html +=
+      '<a class="feedRow" href="' + escapeAttr(it.link) + '" target="_blank" rel="noreferrer">' +
+        '<div class="feedMedia">' +
+          (it.image ? '<img class="feedImg" src="' + escapeAttr(it.image) + '" alt="" />' : "") +
+        "</div>" +
+        '<div class="feedText">' +
+          '<div class="feedTitle">' + escapeHtml(it.title) + "</div>" +
+          (it.description ? '<div class="feedDesc">' + escapeHtml(it.description) + "</div>" : "") +
+        "</div>" +
+      "</a>";
   }
-
-  const text = document.createElement("div");
-  text.className = "reelText";
-
-  const titleWrap = document.createElement("div");
-  titleWrap.className = "reelTitleWrap";
-
-  if (it.link){
-    const qr = document.createElement("img");
-    qr.className = "reelQrTiny";
-    qr.alt = "QR";
-    qr.src = await makeQrDataUrl(it.link, 72);
-    titleWrap.append(qr);
-  }
-
-  const title = document.createElement("div");
-  title.className = "reelTitle";
-  title.textContent = it.title || "Untitled";
-  titleWrap.append(title);
-
-  const desc = document.createElement("div");
-  desc.className = "reelDesc";
-  desc.textContent = it.description || "";
-
-  text.append(titleWrap, desc);
-
-  row.append(media, text);
-
-  if (it.link){
-    row.classList.add("reelTile--clickable");
-    row.addEventListener("click", () => window.open(it.link, "_blank", "noopener,noreferrer"));
-  }
-
-  return row;
+  html += "</div>";
+  return html;
 }
 
-function makeEmptyCard(title, text){
-  const box = document.createElement("div");
-  box.className = "emptyCard";
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, function (m) {
+    return { "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;" }[m];
+  });
+}
 
-  const t = document.createElement("div");
-  t.className = "emptyTitle";
-  t.textContent = title;
-
-  const p = document.createElement("div");
-  p.className = "emptyText";
-  p.textContent = text;
-
-  box.append(t, p);
-  return box;
+function escapeAttr(s){
+  return escapeHtml(String(s || "")).replace(/"/g, "&quot;");
 }
