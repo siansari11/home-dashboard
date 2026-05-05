@@ -72,7 +72,7 @@ export function renderTasks(el){
       });
 
     } catch (e){
-      listEl.innerHTML = <div class="emptyState">${escapeHTML(e.message)}</div>;
+      listEl.innerHTML = <div class="emptyState">${e.message}</div>;
       console.log(e);
     }
   }
