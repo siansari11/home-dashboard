@@ -1,162 +1,101 @@
-// src/components/tasks.js
-import "../styles/tasks.css";
-import { listTasks, addTask, toggleTask, deleteTask, clearDone } from "../lib/tasks.js";
+import {
+  fetchTasks,
+  addTask,
+  completeTask,
+  deleteTask
+} from "../lib/todoist.js";
 
 export function renderTasks(el){
-  el.innerHTML = "";
+  el.innerHTML = `
+    <div class="sectionHead">
+      <div class="pill">✅ Tasks</div>
+    </div>
 
-  // Header
-  var header = document.createElement("div");
-  header.className = "tasksHeader";
+    <div id="taskList"></div>
 
-  var pill = document.createElement("div");
-  pill.className = "pill";
-  pill.textContent = "✅ Tasks";
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <input id="taskInput" type="text" placeholder="Add a task…"
+        style="flex:1; border:1px solid var(--line); background:rgba(255,255,255,0.65);
+               border-radius:14px; padding:12px; font-size:14px;" />
+      <button id="addBtn"
+        style="border:1px solid var(--line); background:rgba(255,255,255,0.75);
+               border-radius:14px; padding:12px 14px; font-weight:900;">
+        Add
+      </button>
+    </div>
+  `;
 
-  var clearBtn = document.createElement("button");
-  clearBtn.id = "clearDoneBtn";
-  clearBtn.className = "tasksClearBtn";
-  clearBtn.type = "button";
-  clearBtn.textContent = "Clear done";
+  const listEl = el.querySelector("#taskList");
+  const input = el.querySelector("#taskInput");
 
-  header.append(pill, clearBtn);
+  async function draw(){
+    listEl.innerHTML = "Loading…";
 
-  // List container
-  var listEl = document.createElement("div");
-  listEl.id = "taskList";
-  listEl.className = "taskList";
+    try {
+      const items = await fetchTasks();
 
-  // Add row
-  var addRow = document.createElement("div");
-  addRow.className = "tasksAddRow";
+      if (!items.length){
+        listEl.innerHTML = `<div class="emptyState">No tasks 🎉</div>`;
+        return;
+      }
 
-  var input = document.createElement("input");
-  input.id = "taskInput";
-  input.className = "taskInput";
-  input.type = "text";
-  input.placeholder = "Add a task…";
+      listEl.innerHTML = `
+        <div style="display:flex; flex-direction:column; gap:10px;">
+          ${items.map(t => `
+            <div style="display:grid; grid-template-columns:34px 1fr auto; gap:10px; padding:10px; border-radius:16px; border:1px solid var(--line); background:rgba(255,255,255,0.65);">
 
-  var addBtn = document.createElement("button");
-  addBtn.id = "addBtn";
-  addBtn.className = "taskAddBtn";
-  addBtn.type = "button";
-  addBtn.textContent = "Add";
+              <button data-done="${t.id}" style="border:1px solid var(--line); border-radius:12px;">✓</button>
 
-  addRow.append(input, addBtn);
+              <div style="font-weight:900;">${escapeHtml(t.content)}</div>
 
-  // Footer note
-  var note = document.createElement("div");
-  note.className = "tasksNote";
-  note.textContent = "Pilot mode: tasks are stored on this device only. Sync comes next.";
+              <button data-del="${t.id}" style="border:1px solid var(--line); border-radius:12px;">✕</button>
 
-  el.append(header, listEl, addRow, note);
+            </div>
+          `).join("")}
+        </div>
+      `;
 
-  function draw(){
-    var items = listTasks();
-
-    listEl.innerHTML = "";
-
-    if (!items.length){
-      var empty = document.createElement("div");
-      empty.className = "taskEmptyCard";
-
-      var t = document.createElement("div");
-      t.className = "taskEmptyTitle";
-      t.textContent = "No tasks yet";
-
-      var p = document.createElement("div");
-      p.className = "taskEmptyText";
-      p.textContent = "Add something small (even “drink water”).";
-
-      empty.append(t, p);
-      listEl.appendChild(empty);
-      return;
-    }
-
-    var wrap = document.createElement("div");
-    wrap.className = "taskScroll";
-
-    for (var i = 0; i < items.length; i++){
-      var task = items[i];
-
-      var row = document.createElement("div");
-      row.className = "taskRow";
-      if (task.done) row.classList.add("taskRow--done");
-
-      // Toggle button
-      var toggleBtn = document.createElement("button");
-      toggleBtn.type = "button";
-      toggleBtn.className = "taskToggleBtn";
-      if (task.done) toggleBtn.classList.add("taskToggleBtn--done");
-      toggleBtn.setAttribute("aria-label", "toggle");
-      toggleBtn.setAttribute("data-toggle", task.id);
-      toggleBtn.textContent = task.done ? "✓" : "";
-
-      // Main text
-      var main = document.createElement("div");
-      main.className = "taskMain";
-
-      var title = document.createElement("div");
-      title.className = "taskText";
-      if (task.done) title.classList.add("taskText--done");
-      title.textContent = task.text || "";
-
-      var sub = document.createElement("div");
-      sub.className = "taskSub";
-      sub.textContent = task.done ? "Completed" : "Tap ✓ when done";
-
-      main.append(title, sub);
-
-      // Delete
-      var delBtn = document.createElement("button");
-      delBtn.type = "button";
-      delBtn.className = "taskDeleteBtn";
-      delBtn.setAttribute("data-del", task.id);
-      delBtn.textContent = "Delete";
-
-      row.append(toggleBtn, main, delBtn);
-      wrap.appendChild(row);
-    }
-
-    listEl.appendChild(wrap);
-
-    // Wire buttons
-    var toggles = listEl.querySelectorAll("[data-toggle]");
-    for (var t = 0; t < toggles.length; t++){
-      toggles[t].addEventListener("click", function(){
-        toggleTask(this.getAttribute("data-toggle"));
-        draw();
+      // complete
+      listEl.querySelectorAll("[data-done]").forEach(btn => {
+        btn.onclick = async () => {
+          await completeTask(btn.dataset.done);
+          draw();
+        };
       });
-    }
 
-    var dels = listEl.querySelectorAll("[data-del]");
-    for (var d = 0; d < dels.length; d++){
-      dels[d].addEventListener("click", function(){
-        deleteTask(this.getAttribute("data-del"));
-        draw();
+      // delete
+      listEl.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = async () => {
+          await deleteTask(btn.dataset.del);
+          draw();
+        };
       });
+
+    } catch (e){
+      listEl.innerHTML = `<div class="emptyState">Failed to load tasks</div>`;
+      console.log(e);
     }
   }
 
-  addBtn.addEventListener("click", function(){
-    addTask(input.value);
+  el.querySelector("#addBtn").onclick = async () => {
+    await addTask(input.value);
     input.value = "";
     draw();
-    input.focus();
-  });
+  };
 
-  input.addEventListener("keydown", function(e){
+  input.addEventListener("keydown", async (e) => {
     if (e.key === "Enter"){
-      addTask(input.value);
+      await addTask(input.value);
       input.value = "";
       draw();
     }
   });
 
-  clearBtn.addEventListener("click", function(){
-    clearDone();
-    draw();
-  });
-
   draw();
+}
+
+function escapeHtml(s){
+  return String(s || "").replace(/[&<>"']/g, m => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#039;"
+  }[m]));
 }
