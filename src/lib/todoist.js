@@ -1,6 +1,6 @@
 import { CONFIG } from "../config.js";
 
-const API = "https://api.todoist.com/rest/v2";
+const API = "https://corsproxy.io/?https://api.todoist.com/rest/v2";
 
 function headers(){
   return {
