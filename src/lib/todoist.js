@@ -11,8 +11,19 @@ function headers(){
 
 // 📥 Get tasks
 export async function fetchTasks(){
-  const res = await fetch(API + "/tasks", { headers: headers() });
-  return await res.json();
+
+const response = await fetch(API, {
+  headers: {
+    "Authorization": "Bearer "+CONFIG.todoist.apiToken
+  }
+});
+
+const tasks = await response.json();
+console.log(tasks);
+  return tasks
+  
+ // const res = await fetch(API + "/tasks", { headers: headers() });
+//  return await res.json();
 }
 
 // ➕ Add task
