@@ -18,7 +18,7 @@ const response = await fetch(API + "/tasks", {
   }
 });
 console.log(response);
-tasks = await response.json();
+const tasks = await response.json();
   console.log("JSON Tasks: ");
   console.log(tasks);
   return tasks;
