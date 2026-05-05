@@ -1,6 +1,6 @@
 import { CONFIG } from "../config.js";
 
-const API = "https://api.todoist.com/api/v1/sync";
+const API = "https://corsproxy.io/?https://api.todoist.com/api/v1/sync";
 
 function headers(){
   return {
@@ -12,13 +12,7 @@ function headers(){
 // 📥 Get tasks
 export async function fetchTasks(){
   const res = await fetch(API + "/tasks", { headers: headers() });
-
-  console.log("STATUS:", res.status);
-
-  const text = await res.text();
-  console.log("RAW:", text);
-
-  return JSON.parse(text);
+  return await res.json();
 }
 
 // ➕ Add task
