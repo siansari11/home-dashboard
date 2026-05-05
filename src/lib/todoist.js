@@ -17,10 +17,8 @@ const response = await fetch(API + "/tasks", {
     "Authorization": "Bearer "+CONFIG.todoist.apiToken
   }
 });
-
-const tasks = await response.json();
-console.log(tasks);
-  return tasks
+console.log(response);
+return await response.json();
   
  // const res = await fetch(API + "/tasks", { headers: headers() });
 //  return await res.json();
