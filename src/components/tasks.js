@@ -72,7 +72,7 @@ export function renderTasks(el){
       });
 
     } catch (e){
-      listEl.innerHTML = `<div class="emptyState">Testing... Failed to load tasks</div>`;
+      listEl.innerHTML = '<div class="emptyState">'+e.message+' Testing... Failed to load tasks</div>';
       console.log(e);
     }
   }
