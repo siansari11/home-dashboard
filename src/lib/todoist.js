@@ -12,7 +12,7 @@ function headers(){
 // 📥 Get tasks
 export async function fetchTasks(){
 
-const response = await fetch(API, {
+const response = await fetch(API + "/tasks", {
   headers: {
     "Authorization": "Bearer "+CONFIG.todoist.apiToken
   }
