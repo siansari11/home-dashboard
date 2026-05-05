@@ -1,127 +1,97 @@
-// src/components/tasks.js
+import {
+  fetchTasks,
+  addTask,
+  completeTask,
+  deleteTask
+} from "../lib/todoist.js";
+
 export function renderTasks(el){
-
-  // 🔴 PASTE your Todoist ICS link here
-  const TODOIST_ICS = "PASTE_YOUR_ICS_LINK_HERE";
-
   el.innerHTML = `
     <div class="sectionHead">
       <div class="pill">✅ Tasks</div>
     </div>
 
-    <div id="taskList">Loading…</div>
+    <div id="taskList"></div>
+
+    <div style="display:flex; gap:10px; margin-top:10px;">
+      <input id="taskInput" type="text" placeholder="Add a task…"
+        style="flex:1; border:1px solid var(--line); background:rgba(255,255,255,0.65);
+               border-radius:14px; padding:12px; font-size:14px;" />
+      <button id="addBtn"
+        style="border:1px solid var(--line); background:rgba(255,255,255,0.75);
+               border-radius:14px; padding:12px 14px; font-weight:900;">
+        Add
+      </button>
+    </div>
   `;
 
   const listEl = el.querySelector("#taskList");
+  const input = el.querySelector("#taskInput");
 
-  async function loadTasks(){
+  async function draw(){
+    listEl.innerHTML = "Loading…";
+
     try {
-      const proxy = "https://corsproxy.io/?";
-      const res = await fetch(proxy + encodeURIComponent(TODOIST_ICS));
-      const text = await res.text();
+      const items = await fetchTasks();
 
-      const tasks = parseICS(text);
-
-      if (!tasks.length){
+      if (!items.length){
         listEl.innerHTML = `<div class="emptyState">No tasks 🎉</div>`;
         return;
       }
 
       listEl.innerHTML = `
         <div style="display:flex; flex-direction:column; gap:10px;">
-          ${tasks.map(t => `
-            <a href="${t.url}" target="_blank"
-              style="
-                display:flex;
-                flex-direction:column;
-                padding:12px;
-                border-radius:16px;
-                border:1px solid var(--line);
-                background:rgba(255,255,255,0.65);
-                text-decoration:none;
-              ">
+          ${items.map(t => `
+            <div style="display:grid; grid-template-columns:34px 1fr auto; gap:10px; padding:10px; border-radius:16px; border:1px solid var(--line); background:rgba(255,255,255,0.65);">
 
-              <div style="font-weight:900; color:rgba(15,23,42,0.8);">
-                ${escapeHtml(t.title)}
-              </div>
+              <button data-done="${t.id}" style="border:1px solid var(--line); border-radius:12px;">✓</button>
 
-              ${t.date ? `
-                <div style="font-size:12px; color:var(--muted); margin-top:4px;">
-                  ${t.date}
-                </div>
-              ` : ""}
+              <div style="font-weight:900;">${escapeHtml(t.content)}</div>
 
-            </a>
+              <button data-del="${t.id}" style="border:1px solid var(--line); border-radius:12px;">✕</button>
+
+            </div>
           `).join("")}
         </div>
       `;
 
+      // complete
+      listEl.querySelectorAll("[data-done]").forEach(btn => {
+        btn.onclick = async () => {
+          await completeTask(btn.dataset.done);
+          draw();
+        };
+      });
+
+      // delete
+      listEl.querySelectorAll("[data-del]").forEach(btn => {
+        btn.onclick = async () => {
+          await deleteTask(btn.dataset.del);
+          draw();
+        };
+      });
+
     } catch (e){
-      console.log("Todoist load error:", e);
-      listEl.innerHTML = `<div class="emptyState">Failed to load tasks</div>`;
+      listEl.innerHTML = `<div class="emptyState">${escapeHtml(e.message)}</div>`;
+      console.log(e);
     }
   }
 
-  loadTasks();
-  setInterval(loadTasks, 5 * 60 * 1000); // refresh every 5 min
-}
+  el.querySelector("#addBtn").onclick = async () => {
+    await addTask(input.value);
+    input.value = "";
+    draw();
+  };
 
-/* =========================
-   ICS PARSER (simple + reliable)
-   ========================= */
+  input.addEventListener("keydown", async (e) => {
+    if (e.key === "Enter"){
+      await addTask(input.value);
+      input.value = "";
+      draw();
+    }
+  });
 
-function parseICS(text){
-  const events = text.split("BEGIN:VEVENT");
-  const tasks = [];
-
-  for (let i = 1; i < events.length; i++){
-    const block = events[i];
-
-    const title = match(block, "SUMMARY");
-    const url = match(block, "URL");
-    const dt = match(block, "DTSTART");
-
-    tasks.push({
-      title: title || "Task",
-      url: url || "#",
-      date: formatDate(dt)
-    });
-  }
-
-  return tasks;
-}
-
-function match(block, key){
-  const regex = new RegExp(key + ":(.+)");
-  const m = block.match(regex);
-  return m ? m[1].trim() : "";
-}
-
-function formatDate(dt){
-  if (!dt) return "";
-
-  // handle YYYYMMDD or YYYYMMDDTHHmmss
-  if (/^\\d{8}$/.test(dt)){
-    return "All day";
-  }
-
-  try {
-    const year = dt.slice(0,4);
-    const month = dt.slice(4,6);
-    const day = dt.slice(6,8);
-    const hour = dt.slice(9,11);
-    const min = dt.slice(11,13);
-
-    const d = new Date(`${year}-${month}-${day}T${hour}:${min}:00`);
-
-    return d.toLocaleString([], {
-      weekday: "short",
-      hour: "2-digit",
-      minute: "2-digit"
-    });
-  } catch {
-    return "";
-  }
+  draw();
 }
 
 function escapeHtml(s){
