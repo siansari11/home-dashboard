@@ -2,8 +2,6 @@
 import {
   isTodoistConfigured,
   fetchTasks,
-  fetchProjects,
-  fetchSections,
   addTask,
   completeTask,
   deleteTask,
@@ -11,7 +9,6 @@ import {
 import '../styles/tasks.css';
 
 export function renderTasks(el) {
-
   el.innerHTML = `
     <div class="sectionHead">
       <div class="pill">✅ Tasks</div>
