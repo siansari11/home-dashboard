@@ -1,5 +1,16 @@
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vite'
 
 export default defineConfig({
-  base: '/home-dashboard/'
-});
+  server: {
+    proxy: {
+      '/api/todoist': {
+        target: 'https://api.todoist.com',
+        changeOrigin: true,
+        secure: true,
+
+        rewrite: (path) =>
+          path.replace(/^\/api\/todoist/, '')
+      }
+    }
+  }
+})

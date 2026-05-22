@@ -1,55 +1,116 @@
-import { CONFIG } from "../config.js";
+const API = '/api/todoist/api/v1'
 
-const API = "https://corsproxy.io/?https://api.todoist.com/api/v1";
-
-function headers(){
+function headers() {
   return {
-    "Authorization": "Bearer " + CONFIG.todoist.apiToken,
-    "Content-Type": "application/json"
-  };
+    'Content-Type': 'application/json',
+    Authorization: `Bearer ${import.meta.env.VITE_TODOIST_TOKEN}`
+  }
 }
 
-// 📥 Get tasks
-export async function fetchTasks(){
+export async function fetchTasks() {
 
-const response = await fetch(API + "/tasks", {
-  headers: {
-    "Authorization": "Bearer "+CONFIG.todoist.apiToken
+  let allTasks = [];
+  let nextCursor = null;
+
+  do {
+
+    const url = nextCursor
+      ? `${API}/tasks?cursor=${encodeURIComponent(nextCursor)}`
+      : `${API}/tasks`;
+
+    const res = await fetch(url, {
+      headers: headers()
+    });
+
+    if (!res.ok) {
+      throw new Error(`Todoist fetch failed: ${res.status}`);
+    }
+
+    const data = await res.json();
+
+    const tasks = data.results || data || [];
+
+    allTasks.push(...tasks);
+
+    nextCursor = data.next_cursor || null;
+
+  } while (nextCursor);
+
+  return allTasks;
+}
+
+// 📁 Projects
+export async function fetchProjects() {
+  const res = await fetch(`${API}/projects`, {
+    headers: headers()
+  })
+
+  if (!res.ok) {
+    throw new Error(`Project fetch failed: ${res.status}`)
   }
-});
-console.log(response);
-const tasks = await response.json();
-  console.log("JSON Tasks: ");
-  console.log(tasks);
-  return tasks;
-  
- // const res = await fetch(API + "/tasks", { headers: headers() });
-//  return await res.json();
+
+  const data = await res.json()
+
+  return Array.isArray(data)
+    ? data
+    : (data.results || [])
+}
+
+// 📚 Sections
+export async function fetchSections() {
+
+  const res = await fetch(`${API}/sections`, {
+    headers: headers()
+  });
+
+  if (!res.ok) {
+    throw new Error(`Section fetch failed: ${res.status}`);
+  }
+
+  const data = await res.json();
+
+  return Array.isArray(data)
+    ? data
+    : (data.results || []);
 }
 
 // ➕ Add task
-export async function addTask(text){
-  if (!text || !text.trim()) return;
-
-  await fetch(API + "/tasks", {
-    method: "POST",
+export async function addTask(text) {
+  const res = await fetch(`${API}/tasks?limit=200`, {
+    method: 'POST',
     headers: headers(),
-    body: JSON.stringify({ content: text })
-  });
+    body: JSON.stringify({
+      content: text
+    })
+  })
+
+  if (!res.ok) {
+    throw new Error(`Add task failed: ${res.status}`)
+  }
+
+  return await res.json()
 }
 
 // ✅ Complete task
-export async function completeTask(id){
-  await fetch(API + "/tasks/" + id + "/close", {
-    method: "POST",
+export async function completeTask(id) {
+  const res = await fetch(`${API}/tasks/${id}/close`, {
+    method: 'POST',
     headers: headers()
-  });
+  })
+
+  if (!res.ok) {
+    throw new Error(`Complete task failed: ${res.status}`)
+  }
 }
 
 // 🗑 Delete task
-export async function deleteTask(id){
-  await fetch(API + "/tasks/" + id, {
-    method: "DELETE",
+export async function deleteTask(id) {
+  const res = await fetch(`${API}/tasks/${id}`, {
+    method: 'DELETE',
     headers: headers()
-  });
+  })
+
+  if (!res.ok) {
+    throw new Error(`Delete task failed: ${res.status}`)
+  }
 }
