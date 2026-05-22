@@ -209,3 +209,18 @@
   font-weight: 700;
   user-select: none;
 }
+/* ── Priority badge colours (CSS classes replace inline style) ── */
+.priorityBadge {
+  font-size: 9px;
+  font-weight: 800;
+  color: white;
+  padding: 3px 6px;
+  border-radius: 999px;
+}
+.priorityBadge--p1 { background: #ff6b6b; }
+.priorityBadge--p2 { background: #ffb84d; }
+.priorityBadge--p3 { background: #6ba8ff; }
+.priorityBadge--p4 { background: #999;    }
+
+/* ── Local-tasks fallback ── */
+.taskRow--done .taskTitle { opacity: .5; text-decoration: line-through; }
