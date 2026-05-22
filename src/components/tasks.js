@@ -2,6 +2,8 @@
 import {
   isTodoistConfigured,
   fetchTasks,
+  fetchProjects,
+  fetchSections,
   addTask,
   completeTask,
   deleteTask,
