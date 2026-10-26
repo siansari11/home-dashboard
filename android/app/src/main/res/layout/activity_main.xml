@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:keepScreenOn="true">
+
+    <WebView
+        android:id="@+id/web"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <Button
+        android:id="@+id/setupBtn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="top|start"
+        android:layout_margin="10dp"
+        android:backgroundTint="#F4F6FB"
+        android:minHeight="40dp"
+        android:minWidth="0dp"
+        android:paddingLeft="14dp"
+        android:paddingRight="14dp"
+        android:text="@string/setup"
+        android:textAllCaps="false"
+        android:textColor="#0F172A"
+        android:textSize="14sp" />
+</FrameLayout>

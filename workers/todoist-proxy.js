@@ -3,14 +3,18 @@
  * ─────────────────────────────────────────────────────────
  * Deploy steps:
  *  1. Sign up free at https://workers.cloudflare.com
- *  2. Create Application → Create Worker → paste this file → Deploy
- *  3. Settings → Variables → Add variable (type: Secret)
- *       Name:  TODOIST_TOKEN
- *       Value: your token from todoist.com/app/settings/integrations/developer
- *  4. Copy your worker URL (e.g. https://todoist-proxy.YOUR.workers.dev)
+ *  2. From the repo root (uses wrangler.toml):
+ *       npx wrangler login
+ *       npx wrangler deploy
+ *  3. Set the existing Todoist API token as a Worker secret.
+ *     You will be prompted; the value is not written into the repo:
+ *       wrangler secret put TODOIST_TOKEN
+ *     Token location: todoist.com/app/settings/integrations/developer
+ *     Dashboard equivalent: Settings → Variables → Secret → TODOIST_TOKEN
+ *  4. Copy the worker URL (https://todoistapiworker.sia-ansari11.workers.dev)
  *  5. Paste it into CONFIG.todoistProxyUrl in src/config.js
  *
- * Security: your token lives only in Cloudflare — never in the repo.
+ * Security: the token lives only in the Worker secret — never in the repo.
  */
 
 const TODOIST_BASE    = 'https://api.todoist.com/api/v1/';
@@ -36,6 +40,13 @@ export default {
       return jsonResponse({ error: 'Only Todoist API v1 URLs are allowed' }, 403);
     }
 
+    const todoistToken = env.TODOIST_TOKEN;
+    if (!todoistToken) {
+      return jsonResponse({
+        error: 'Worker secret TODOIST_TOKEN is not set. From the repo root run: wrangler secret put TODOIST_TOKEN',
+      }, 500);
+    }
+
     // Read optional method override (for POST/DELETE via GET-tunnelled requests)
     const methodOverride = incoming.searchParams.get('method') || request.method;
     const method = methodOverride.toUpperCase();
@@ -43,7 +54,7 @@ export default {
     // Forward body for mutations
     let body      = undefined;
     let reqHeaders = {
-      'Authorization':  `Bearer ${env.TODOIST_TOKEN}`,
+      'Authorization':  `Bearer ${todoistToken}`,
       'Content-Type':   'application/json',
     };
 

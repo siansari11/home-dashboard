@@ -5,7 +5,9 @@
   "scripts": {
     "check:inline-styles": "grep -RIn --exclude-dir=node_modules --exclude=*.css --exclude=*.svg \"\\.style\\.\" src && exit 1 || exit 0",
     "dev": "vite",
-    "build": "vite build"
+    "build": "vite build",
+    "build:apk": "npm run build && npm run build:apk:gradle",
+    "build:apk:gradle": "cd android && ./gradlew assembleDebug"
   },
   "devDependencies": {
     "vite": "^5.0.0"

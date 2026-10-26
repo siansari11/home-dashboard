@@ -1,0 +1,14 @@
+# Cloudflare Worker for the Todoist proxy.
+# The Todoist token is a secret, not a var in this file.
+#
+# From the repo root:
+#   npx wrangler login
+#   wrangler secret put TODOIST_TOKEN
+#   npx wrangler deploy
+#
+# Paste the existing Todoist API token when prompted.
+# Worker URL: https://todoistapiworker.sia-ansari11.workers.dev
+
+name = "todoistapiworker"
+main = "workers/todoist-proxy.js"
+compatibility_date = "2024-12-01"

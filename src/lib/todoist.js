@@ -2,6 +2,8 @@
 // ─────────────────────────────────────────────────────────────
 //  Todoist REST API v1 — routed through a Cloudflare Worker
 //  proxy so the token never lives in the browser bundle.
+//  The Worker reads it from the TODOIST_TOKEN secret
+//  (wrangler secret put TODOIST_TOKEN).
 //
 //  Set CONFIG.todoistProxyUrl in src/config.js.
 //  If it's empty, every export throws a "not configured" error

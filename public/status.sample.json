@@ -1,0 +1,66 @@
+{
+  "generated_at": "2026-10-26T06:30:00Z",
+  "source": "lumen",
+  "morning_brief": [
+    "EXAMPLE — this file is sample data bundled with the dashboard",
+    "EXAMPLE — open Help and save your status URL to replace it",
+    "EXAMPLE — three things before noon: school run, invoice, short walk"
+  ],
+  "processes": [
+    {
+      "id": "example-permit",
+      "title": "EXAMPLE — Renew residence permit",
+      "priority": 1,
+      "status": "blocked",
+      "deadline": "2026-10-20",
+      "next_action": "EXAMPLE — email the Ausländerbehörde about the missing form",
+      "owner": "EXAMPLE — Sia",
+      "updated": "2026-10-25",
+      "notes": "EXAMPLE — priority 1, deadline 2026-10-20"
+    },
+    {
+      "id": "example-bill",
+      "title": "EXAMPLE — Pay the electricity bill",
+      "priority": 2,
+      "status": "todo",
+      "deadline": "2026-10-29",
+      "next_action": "EXAMPLE — open the Stadtwerke portal and pay",
+      "owner": "EXAMPLE — household",
+      "updated": "2026-10-26",
+      "notes": "EXAMPLE — deadline 2026-10-29"
+    },
+    {
+      "id": "example-tyres",
+      "title": "EXAMPLE — Book winter tyres",
+      "priority": 2,
+      "status": "waiting",
+      "deadline": "2026-11-08",
+      "next_action": "EXAMPLE — call the garage and take the first morning slot",
+      "owner": "EXAMPLE — Sia",
+      "updated": "2026-10-24",
+      "notes": "EXAMPLE — deadline 2026-11-08"
+    },
+    {
+      "id": "example-trip",
+      "title": "EXAMPLE — Plan the spring trip",
+      "priority": 3,
+      "status": "in_progress",
+      "deadline": "2026-12-20",
+      "next_action": "EXAMPLE — shortlist two weekends that work for everyone",
+      "owner": "EXAMPLE — household",
+      "updated": "2026-10-22",
+      "notes": "EXAMPLE — deadline 2026-12-20"
+    },
+    {
+      "id": "example-meals",
+      "title": "EXAMPLE — Weekly meal plan",
+      "priority": 4,
+      "status": "done",
+      "deadline": null,
+      "next_action": "EXAMPLE — nothing until next Sunday",
+      "owner": "EXAMPLE — household",
+      "updated": "2026-10-26",
+      "notes": "EXAMPLE — no deadline"
+    }
+  ]
+}

@@ -7,6 +7,8 @@ import { renderAgenda } from "./components/agenda.js";
 import { renderTasks } from "./components/tasks.js";
 import { renderFeed } from "./components/feed.js";     // Lifestyle
 import { renderReels } from "./components/reels.js";   // Food
+import { renderProcesses } from "./components/processes.js";
+import { mountHelp } from "./components/help.js";
 
 document.querySelector("#app").innerHTML = `
   <div class="wrap">
@@ -16,6 +18,11 @@ document.querySelector("#app").innerHTML = `
     <section class="card strong weatherCard">
       <h2>Weather</h2>
       <div id="weather">Loading…</div>
+    </section>
+
+    <section class="card processesCard">
+      <h2>Processes</h2>
+      <div id="processes">Loading…</div>
     </section>
 
     <!-- ONE grid = 2 columns, 2 rows -->
@@ -45,8 +52,15 @@ document.querySelector("#app").innerHTML = `
 
 renderHeader(document.querySelector("#header"));
 renderWeather(document.querySelector("#weather"));
-renderAgenda(document.querySelector("#agenda"));
+var agendaEl = document.querySelector("#agenda");
+renderAgenda(agendaEl);
 renderTasks(document.querySelector("#tasks"));
 //  overflow: hidden;
 renderFeed(document.querySelector('#feed'));
 renderReels(document.querySelector('#reels'));
+renderProcesses(document.querySelector("#processes"));
+mountHelp();
+
+window.addEventListener("homedash:settings", function () {
+  renderAgenda(agendaEl);
+});

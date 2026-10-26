@@ -1,0 +1,166 @@
+.helpLauncher {
+  position: fixed;
+  top: 10px;
+  right: 10px;
+  z-index: 25;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.82);
+  color: rgba(15, 23, 42, 0.8);
+  border-radius: 999px;
+  padding: 8px 12px;
+  font-weight: 800;
+  font-size: 13px;
+}
+
+.helpBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 18px 12px;
+  overflow: auto;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.helpBackdrop.is-open {
+  display: flex;
+}
+
+.helpPanel {
+  width: min(720px, 100%);
+  margin: 12px 0 28px;
+  padding: 16px 16px 20px;
+  border-radius: 22px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.96);
+  color: var(--text);
+  box-shadow: 0 18px 50px rgba(2, 6, 23, 0.25);
+}
+
+.helpTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.helpTitle {
+  margin: 0;
+  font-size: 18px;
+  letter-spacing: 0;
+  text-transform: none;
+  color: var(--text);
+}
+
+.helpClose,
+.helpSave,
+.helpAndroidBtn {
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.9);
+  color: rgba(15, 23, 42, 0.8);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-weight: 800;
+  font-size: 14px;
+}
+
+.helpLead,
+.helpNote {
+  margin: 0 0 10px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.helpHeading {
+  margin: 14px 0 6px;
+  font-size: 13px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.helpList {
+  margin: 0 0 8px;
+  padding-left: 18px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.helpList li {
+  margin: 0 0 4px;
+}
+
+.helpField {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 0 12px;
+}
+
+.helpField__label {
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.helpInput {
+  width: 100%;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 12px;
+  font-size: 16px;
+  color: var(--text);
+}
+
+.helpExample {
+  font-size: 12px;
+  color: var(--muted);
+  word-break: break-all;
+}
+
+.helpTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-bottom: 8px;
+}
+
+.helpTable th,
+.helpTable td {
+  text-align: left;
+  vertical-align: top;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--line);
+}
+
+.helpCode {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 12px;
+  word-break: break-all;
+}
+
+.helpSaved {
+  min-height: 1.2em;
+  margin: 8px 0 0;
+  font-size: 13px;
+  font-weight: 800;
+  color: rgb(21, 128, 61);
+}
+
+.helpError {
+  min-height: 1.2em;
+  margin: 4px 0 0;
+  font-size: 13px;
+  font-weight: 700;
+  color: rgb(185, 28, 28);
+}
+
+.helpActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 8px;
+}

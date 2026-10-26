@@ -1,0 +1,166 @@
+.processesCard {
+  flex: 0 1 auto;
+  max-height: 32vh;
+  margin-bottom: 14px;
+}
+
+.processesCard > h2 {
+  flex: 0 0 auto;
+}
+
+#processes {
+  min-height: 0;
+}
+
+.processStatusLine {
+  font-size: 12px;
+  color: var(--muted);
+  margin-bottom: 8px;
+}
+
+.processBanner {
+  margin-bottom: 8px;
+  padding: 8px 10px;
+  border-radius: 12px;
+  border: 1px dashed rgba(180, 83, 9, 0.45);
+  background: rgba(255, 251, 235, 0.8);
+  color: rgba(120, 53, 15, 0.9);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.morningBrief {
+  margin: 0 0 10px 0;
+  padding: 10px 12px 10px 28px;
+  border-radius: 16px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.morningBrief__title {
+  margin: 0 0 6px -16px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.morningBrief__list {
+  margin: 0;
+  padding: 0 0 0 16px;
+}
+
+.morningBrief__item {
+  margin: 0 0 4px 0;
+  font-size: 13px;
+  color: rgba(15, 23, 42, 0.82);
+}
+
+.morningBrief__item:last-child {
+  margin-bottom: 0;
+}
+
+.processList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.processRow {
+  border-radius: 16px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.processRow--urgent {
+  border-color: rgba(220, 38, 38, 0.55);
+  background: rgba(254, 226, 226, 0.78);
+}
+
+.processRow--soon {
+  border-color: rgba(217, 119, 6, 0.5);
+  background: rgba(254, 243, 199, 0.78);
+}
+
+.processRow--ok {
+  border-color: rgba(22, 163, 74, 0.4);
+  background: rgba(220, 252, 231, 0.72);
+}
+
+.processTop {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+}
+
+.processTitle {
+  flex: 1 1 160px;
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  line-height: 1.25;
+  color: rgba(15, 23, 42, 0.88);
+}
+
+.processMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(15, 23, 42, 0.72);
+}
+
+.processNext,
+.processNotes {
+  margin: 6px 0 0 0;
+  font-size: 12px;
+  line-height: 1.35;
+  color: var(--muted);
+}
+
+.statusPill {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+  color: rgba(15, 23, 42, 0.78);
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid var(--line);
+}
+
+.statusPill--todo { background: rgba(15, 23, 42, 0.06); }
+.statusPill--in_progress { background: rgba(37, 99, 235, 0.14); }
+.statusPill--waiting { background: rgba(217, 119, 6, 0.18); }
+.statusPill--done { background: rgba(22, 163, 74, 0.16); }
+.statusPill--blocked { background: rgba(220, 38, 38, 0.16); }
+
+.processPriority {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 7px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  background: rgba(255, 255, 255, 0.75);
+  border: 1px solid var(--line);
+  color: rgba(15, 23, 42, 0.75);
+}
+
+@media (orientation: landscape) and (max-height: 700px) {
+  .processesCard {
+    max-height: none;
+  }
+}
+
+@media (max-width: 980px) and (orientation: portrait) {
+  .processesCard {
+    max-height: none;
+  }
+}
