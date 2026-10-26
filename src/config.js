@@ -12,14 +12,12 @@ export const CONFIG = {
     lat:  52.2891284,
     lon:  12.9924364,
   },
-  todoist: {
-    apiToken: "eb253fa879d7b7bc4e3fa07b85f34f526f6b153b"
-  },
 
   // ── Todoist proxy ────────────────────────────────────────
-  // The Vite dev proxy only works locally; GitHub Pages needs
-  // a real proxy. Deploy workers/todoist-proxy.js to a free
-  // Cloudflare Worker, then paste its URL here.
+  // The token is not stored in this repo. The Worker reads the
+  // existing token from the TODOIST_TOKEN secret:
+  //   wrangler secret put TODOIST_TOKEN
+  // Deploy workers/todoist-proxy.js, then paste its URL here.
   // Leave empty ('') to show local tasks instead.
   todoistProxyUrl: 'https://todoistapiworker.sia-ansari11.workers.dev',
   // e.g. 'https://todoist-proxy.YOUR_NAME.workers.dev'

@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Home Dashboard</string>
+    <string name="dream_name">Home Dashboard</string>
+    <string name="setup">Setup</string>
+    <string name="settings_title">Dashboard setup</string>
+    <string name="settings_intro">Saved on this phone only. Not written into the app code.</string>
+    <string name="use_remote">Use a remote URL instead of the bundled dashboard</string>
+    <string name="use_remote_example">Example: On — load the Remote URL. Off — use the dashboard copied into the app.</string>
+    <string name="remote_url_label">Remote URL</string>
+    <string name="remote_url_hint">https://siansari11.github.io/home-dashboard/</string>
+    <string name="remote_url_example">Example: https://siansari11.github.io/home-dashboard/</string>
+    <string name="remote_url_error">Remote URL needs to start with https:// or http://</string>
+    <string name="boot_label">Start when the phone boots</string>
+    <string name="boot_example">Example: On — open the dashboard after restart. If it does not, allow Display over other apps, or set Home Dashboard as the Home app.</string>
+    <string name="saver_heading">Screen saver</string>
+    <string name="saver_steps">Settings → Display → Screen saver\nPick Home Dashboard\nWhen to start: While charging\nStart now previews the same dashboard.</string>
+    <string name="web_settings_note">Status URL and bearer token are in the dashboard Help button (top right).</string>
+    <string name="save">Save</string>
+    <string name="overlay_needed">To open after boot, allow Display over other apps for Home Dashboard.</string>
+</resources>

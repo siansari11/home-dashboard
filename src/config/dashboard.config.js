@@ -16,6 +16,10 @@ export const DASHBOARD_CONFIG = {
     maxPickAttempts: 5000,
   },
 
+  processes: {
+    refreshMs: 15 * 60 * 1000,
+  },
+
   rss: {
     // ✅ only lifestyle now
     enabledGroups: ["lifestyle","food"],
